@@ -1,0 +1,24 @@
+# Local configuration and secrets
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local database file, superseded by MySQL
+trading.db
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Backups left by migrations
+*.bak
+*.pre-warehouse

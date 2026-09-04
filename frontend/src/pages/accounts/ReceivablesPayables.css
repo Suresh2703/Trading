@@ -1,0 +1,48 @@
+/* Party list beside the selected party's statement */
+.rp-split {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .rp-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Rows select a party, so they need to look clickable */
+.rp-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rp-row:hover {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.rp-row.selected {
+  background: rgba(139, 92, 246, 0.10);
+  box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.rp-settle {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.rp-tab-count {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+}
+
+.financial-tab.active .rp-tab-count {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--accent-primary);
+}

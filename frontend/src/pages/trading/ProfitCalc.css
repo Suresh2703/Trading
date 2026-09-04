@@ -1,0 +1,51 @@
+.pnl-hint {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.pnl-expand {
+  padding: 0.15rem;
+}
+
+/* --- Open-lot drill-down --- */
+.pnl-lots-row td {
+  background: rgba(15, 23, 42, 0.35);
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+}
+
+.pnl-lots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pnl-lots-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.pnl-lot {
+  display: grid;
+  grid-template-columns: 110px 100px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.pnl-total-row td {
+  border-top: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+@media (max-width: 720px) {
+  .pnl-lot {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 0.35rem;
+  }
+}

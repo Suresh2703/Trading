@@ -1,0 +1,174 @@
+/* --- Account strip: click a card to switch the ledger below --- */
+.cb-accounts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.cb-account {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-main);
+  transition: border-color 0.2s, transform 0.1s;
+}
+
+.cb-account:hover {
+  border-color: var(--accent-primary);
+}
+
+.cb-account.selected {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary) inset;
+}
+
+.cb-account-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.cb-account-code {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.cb-account-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.cb-account-balance {
+  font-family: 'Inter', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* --- Voucher kind switcher --- */
+.cb-kinds {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.cb-kind {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.6rem 1rem;
+  min-width: 150px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.35);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.cb-kind:hover {
+  border-color: var(--accent-primary);
+}
+
+.cb-kind.active {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.cb-kind-hint {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+/* --- Live preview of the two journal lines about to be written --- */
+.cb-preview {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid var(--border-color);
+}
+
+.cb-preview-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.cb-preview-line {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.3rem 0;
+  font-size: 0.88rem;
+}
+
+.cb-side {
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-align: center;
+  border-radius: 4px;
+  padding: 0.1rem 0;
+}
+
+.cb-side.dr {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.cb-side.cr {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.cb-preview-account {
+  color: var(--text-main);
+}
+
+.cb-preview-amount {
+  font-family: 'Inter', monospace;
+  font-weight: 700;
+}
+
+/* --- Ledger header --- */
+.cb-ledger-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+@media (max-width: 640px) {
+  .cb-kind { min-width: 100%; }
+}
+
+/* Points at the screen that owns a flow this one deliberately does not */
+.cb-scope-note {
+  margin: 0 0 1.1rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.cb-scope-note strong { color: var(--text-main); }

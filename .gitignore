@@ -1,0 +1,17 @@
+# Repository-wide rules. Language-specific ones live in backend/ and frontend/.
+
+# Working copies left behind by edits and migrations — never part of the source.
+*.bak
+*.orig
+*.pre-warehouse
+
+# Environment and secrets, wherever they appear
+.env
+*.env
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

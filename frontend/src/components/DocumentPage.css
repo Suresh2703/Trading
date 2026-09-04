@@ -1,0 +1,117 @@
+.doc-lines {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.doc-lines-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.doc-lines-head h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.doc-add-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+/* Compact inputs so a whole line fits on one row */
+.doc-line-input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+select.doc-line-input {
+  cursor: pointer;
+}
+
+select.doc-line-input option {
+  background: var(--bg-dark);
+}
+
+.doc-lines-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.doc-lines-table td {
+  vertical-align: middle;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.doc-totals {
+  margin-top: 1rem;
+  margin-left: auto;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.doc-totals > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--text-muted);
+}
+
+.doc-totals > div strong {
+  color: var(--text-main);
+  font-family: 'Inter', monospace;
+}
+
+.doc-totals .doc-grand {
+  margin-top: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 1rem;
+}
+
+.doc-totals .doc-grand strong {
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* --- Document status pill --- */
+.doc-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.doc-status.draft {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.doc-status.confirmed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.doc-status.cancelled {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
