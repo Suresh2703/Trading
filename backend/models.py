@@ -456,3 +456,47 @@ class UserPreference(Base):
     pref_value = Column(String(500), nullable=True)
 
     user = relationship("User")
+
+class Role(Base):
+    """A named set of permissions.
+
+    `code` is the natural key stored on users, so it is fixed once created —
+    renaming it would silently orphan every account carrying it.
+    """
+    __tablename__ = "roles"
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_role_code"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(30), nullable=False, index=True)
+    name = Column(String(80), nullable=False)
+    description = Column(String(300), nullable=True)
+    # System roles cannot be deleted: ADMIN is the way back in if the matrix
+    # is misconfigured.
+    is_system = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    permissions = relationship("RolePermission", back_populates="role",
+                               cascade="all, delete-orphan")
+
+class RolePermission(Base):
+    """What one role may do with one module.
+
+    Absent row means no access, so a new module is closed until granted rather
+    than open by default.
+    """
+    __tablename__ = "role_permissions"
+    __table_args__ = (
+        UniqueConstraint("role_id", "module", name="uq_role_permission"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    role_id = Column(Integer, ForeignKey("roles.id", ondelete="CASCADE"),
+                     nullable=False, index=True)
+    module = Column(String(40), nullable=False, index=True)
+    # Reading the screen, and changing anything on it.
+    can_view = Column(Boolean, nullable=False, default=False)
+    can_edit = Column(Boolean, nullable=False, default=False)
+
+    role = relationship("Role", back_populates="permissions")

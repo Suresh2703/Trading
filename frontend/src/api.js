@@ -261,6 +261,22 @@ export const passwordApi = {
         })
 };
 
+// --- Roles and the permission matrix --------------------------------------
+export const rolesApi = {
+    // Open to anyone signed in: the menu cannot be built without it.
+    mine: () => request('/roles/me'),
+    modules: () => request('/roles/modules'),
+    // Administrators only, enforced server-side.
+    list: () => request('/roles/'),
+    create: (payload) => request('/roles/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/roles/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/roles/${id}`, { method: 'DELETE' })
+};
+
 export const roleApi = {
     // Administrators only; the server enforces it regardless of the UI.
     set: (userId, role) => request(`/users/${userId}/role`, {

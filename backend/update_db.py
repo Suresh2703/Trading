@@ -117,6 +117,28 @@ def seed(model, rows, key):
             created += 1
     print(f"  {model.__tablename__}: {created} new, {len(rows) - created} already present")
 
+print("Seeding roles and their permissions...")
+import modules as module_defs
+
+for spec in module_defs.DEFAULT_ROLES:
+    role = db.query(models.Role).filter(models.Role.code == spec["code"]).first()
+    if role is None:
+        role = models.Role(code=spec["code"], name=spec["name"],
+                           description=spec["description"],
+                           is_system=spec["is_system"], is_active=True)
+        db.add(role)
+        db.flush()
+        created = 0
+        for module, perm in spec["permissions"].items():
+            db.add(models.RolePermission(role_id=role.id, module=module, **perm))
+            created += 1
+        print(f"  + {spec['code']:9} seeded with {created} module grant(s)")
+    else:
+        # Existing roles are left alone — the matrix is editable, and re-running
+        # the migration must not undo somebody's changes.
+        print(f"  - {spec['code']:9} already present, permissions untouched")
+db.commit()
+
 print("Seeding default master data...")
 seed(models.Category, [
     {"name": "Electronics", "description": "Electronic devices and components"},

@@ -10,6 +10,9 @@
   --danger: #ef4444;
   --border-color: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(30, 41, 59, 0.7);
+  /* Icon rail: 20px icon + padding either side. */
+  --rail-width: 72px;
+  --rail-bg: rgba(15, 23, 42, 0.92);
 }
 
 * {
@@ -66,15 +69,18 @@ body {
    width + left margin tucks it away exactly, leaving no gap behind it. */
 .sidebar {
   flex-shrink: 0;
-  transition: margin-left 0.25s ease, opacity 0.2s ease;
+  transition: width 0.22s ease, padding 0.22s ease, background 0.22s ease;
 }
 
+/* Collapsed, the sidebar shrinks to an icon rail rather than disappearing —
+   the icons stay reachable, on their own darker background so the rail reads
+   as a distinct strip rather than a truncated menu. */
 .dashboard-layout.sidebar-collapsed .sidebar {
-  margin-left: -296px;
-  opacity: 0;
-  /* Keep the hidden menu out of tab order and off the pointer. */
-  pointer-events: none;
-  visibility: hidden;
+  width: var(--rail-width);
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  /* Wider than the transition on .sidebar so the label fade keeps pace. */
+  overflow: visible;
 }
 
 .sidebar-backdrop {
@@ -104,6 +110,16 @@ body {
 
   .main-content {
     padding: 1rem;
+  }
+
+  /* On a phone the rail would cover content to no benefit, so collapsed goes
+     back to fully hidden and the toggle slides the whole menu in and out. */
+  .dashboard-layout.sidebar-collapsed .sidebar {
+    width: 280px;
+    padding: 1.5rem;
+    margin-left: -296px;
+    visibility: hidden;
+    pointer-events: none;
   }
 }
 

@@ -41,6 +41,28 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
                  "email": user.email, "role": user.role or USER},
     }
 
+def valid_role_or_400(db: Session, role: str) -> str:
+    """Roles live in the database, so the set of valid codes is a query.
+
+    Validating against a hardcoded constant would reject every role created
+    through the permissions screen.
+    """
+    code = (role or USER).upper()
+    known = db.query(models.Role).filter(models.Role.code == code).first()
+    if known is None:
+        available = [r.code for r in db.query(models.Role)
+                     .filter(models.Role.is_active.is_(True))
+                     .order_by(models.Role.id).all()]
+        raise HTTPException(
+            status_code=400,
+            detail=f"role must be one of {', '.join(available)}")
+    if not known.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The {code} role is deactivated")
+    return code
+
+
 # --- Passwords -------------------------------------------------------------
 
 MIN_PASSWORD_LENGTH = 8
@@ -156,11 +178,7 @@ def create_user(user: schemas.UserCreate,
     if crud.get_user_by_email(db, email=user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    role = (user.role or USER).upper()
-    if role not in ROLES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"role must be one of {', '.join(sorted(ROLES))}")
+    role = valid_role_or_400(db, user.role)
 
     db_user = crud.create_user(db=db, user=user)
     db_user.role = role
@@ -174,11 +192,7 @@ def set_user_role(user_id: int, payload: schemas.UserRoleUpdate,
                   current_user: models.User = Depends(require_admin),
                   db: Session = Depends(get_db)):
     """Change someone's role. Administrators only."""
-    role = (payload.role or "").upper()
-    if role not in ROLES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"role must be one of {', '.join(sorted(ROLES))}")
+    role = valid_role_or_400(db, payload.role)
 
     user = crud.get_user(db, user_id=user_id)
     if user is None:

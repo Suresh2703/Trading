@@ -205,6 +205,52 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+# --- Roles and permissions ---
+class ModuleInfo(BaseModel):
+    code: str
+    label: str
+
+class PermissionEntry(BaseModel):
+    module: str
+    can_view: bool = False
+    can_edit: bool = False
+
+    # Read directly off the ORM rows when a Role is validated from the model.
+    class Config:
+        from_attributes = True
+
+class RoleBase(BaseModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+class RoleCreate(RoleBase):
+    permissions: List[PermissionEntry] = []
+
+class RoleUpdate(BaseModel):
+    # `code` is deliberately absent: it is the key stored on users, so renaming
+    # it would orphan every account carrying it.
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    permissions: Optional[List[PermissionEntry]] = None
+
+class Role(RoleBase):
+    id: int
+    is_system: bool = False
+    permissions: List[PermissionEntry] = []
+    user_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+class MyPermissions(BaseModel):
+    """What the signed-in user may reach - this drives the menu."""
+    role: str
+    role_name: Optional[str] = None
+    modules: dict = {}
+
 # --- Passwords ---
 class ChangePasswordRequest(BaseModel):
     """Changing your own password: proving you know the current one."""

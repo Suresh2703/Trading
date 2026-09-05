@@ -53,6 +53,9 @@ import Financials from './pages/reports/Financials';
 import Login from './pages/Login';
 
 import { CurrencyProvider } from './context/CurrencyContext';
+import { PermissionProvider } from './context/PermissionContext';
+import RequireModule from './components/RequireModule';
+import RolesPermissions from './pages/RolesPermissions';
 import { preferencesApi } from './api';
 
 // Below this the sidebar overlays the content instead of sitting beside it,
@@ -166,9 +169,10 @@ function App() {
   }
 
   return (
+    <PermissionProvider enabled={isAuthenticated}>
     <CurrencyProvider>
       <div className={sidebarOpen ? 'dashboard-layout' : 'dashboard-layout sidebar-collapsed'}>
-        <Sidebar />
+        <Sidebar collapsed={!sidebarOpen} />
         {/* Only rendered on narrow screens, where the sidebar covers content. */}
         {sidebarOpen && (
           <div className="sidebar-backdrop" onClick={() => setSidebarPreference(false)} />
@@ -179,64 +183,65 @@ function App() {
                   onToggleSidebar={() => setSidebarPreference(!sidebarOpen)} />
           <div className="animate-fade-in" style={{ flex: 1, overflowY: 'auto' }}>
             <Routes>
-              <Route path="/" element={<Overview />} />
-              <Route path="/settings" element={<Configuration />} />
-              <Route path="/auth" element={<AuthUsers />} />
-              <Route path="/master/products" element={<Products />} />
-              <Route path="/master/categories" element={<Categories />} />
-              <Route path="/master/units" element={<Units />} />
-              <Route path="/master/customers" element={<Customers />} />
-              <Route path="/master/suppliers" element={<Suppliers />} />
-              <Route path="/master/tax" element={<Tax />} />
-              <Route path="/master/warehouses" element={<Warehouses />} />
-              <Route path="/inventory/opening" element={<OpeningStock />} />
-              <Route path="/inventory/in" element={<StockIn />} />
-              <Route path="/inventory/out" element={<StockOut />} />
-              <Route path="/inventory/transfer" element={<StockTransfer />} />
-              <Route path="/inventory/adjustment" element={<StockAdjustment />} />
-              <Route path="/sales/order" element={<SalesOrder />} />
-              <Route path="/sales/delivery" element={<Delivery />} />
-              <Route path="/sales/invoice" element={<SalesInvoice />} />
-              <Route path="/sales/return" element={<SalesReturn />} />
-              <Route path="/sales/credit-note" element={<CreditNote />} />
-              <Route path="/purchases/order" element={<PurchaseOrder />} />
-              <Route path="/purchases/receipt" element={<GoodsReceipt />} />
-              <Route path="/purchases/invoice" element={<PurchaseInvoice />} />
-              <Route path="/purchases/return" element={<PurchaseReturn />} />
-              <Route path="/purchases/debit-note" element={<DebitNote />} />
-              <Route path="/trading/buy" element={<Buy />} />
-              <Route path="/trading/sell" element={<Sell />} />
-              <Route path="/trading/transactions" element={<Transactions />} />
-              <Route path="/trading/profit" element={<ProfitCalc />} />
-              <Route path="/accounts/chart" element={<ChartOfAccounts />} />
-              <Route path="/accounts/ledger" element={<GeneralLedger />} />
-              <Route path="/accounts/journal" element={<JournalEntries />} />
-              <Route path="/accounts/cash-bank" element={<CashBankVoucher />} />
+              <Route path="/" element={<RequireModule module="DASHBOARD"><Overview /></RequireModule>} />
+              <Route path="/settings" element={<RequireModule module="SETTINGS"><Configuration /></RequireModule>} />
+              <Route path="/auth" element={<RequireModule module="AUTH_USERS"><AuthUsers /></RequireModule>} />
+              <Route path="/auth/roles" element={<RequireModule module="AUTH_USERS"><RolesPermissions /></RequireModule>} />
+              <Route path="/master/products" element={<RequireModule module="MASTER_DATA"><Products /></RequireModule>} />
+              <Route path="/master/categories" element={<RequireModule module="MASTER_DATA"><Categories /></RequireModule>} />
+              <Route path="/master/units" element={<RequireModule module="MASTER_DATA"><Units /></RequireModule>} />
+              <Route path="/master/customers" element={<RequireModule module="MASTER_DATA"><Customers /></RequireModule>} />
+              <Route path="/master/suppliers" element={<RequireModule module="MASTER_DATA"><Suppliers /></RequireModule>} />
+              <Route path="/master/tax" element={<RequireModule module="MASTER_DATA"><Tax /></RequireModule>} />
+              <Route path="/master/warehouses" element={<RequireModule module="MASTER_DATA"><Warehouses /></RequireModule>} />
+              <Route path="/inventory/opening" element={<RequireModule module="INVENTORY"><OpeningStock /></RequireModule>} />
+              <Route path="/inventory/in" element={<RequireModule module="INVENTORY"><StockIn /></RequireModule>} />
+              <Route path="/inventory/out" element={<RequireModule module="INVENTORY"><StockOut /></RequireModule>} />
+              <Route path="/inventory/transfer" element={<RequireModule module="INVENTORY"><StockTransfer /></RequireModule>} />
+              <Route path="/inventory/adjustment" element={<RequireModule module="INVENTORY"><StockAdjustment /></RequireModule>} />
+              <Route path="/sales/order" element={<RequireModule module="SALES"><SalesOrder /></RequireModule>} />
+              <Route path="/sales/delivery" element={<RequireModule module="SALES"><Delivery /></RequireModule>} />
+              <Route path="/sales/invoice" element={<RequireModule module="SALES"><SalesInvoice /></RequireModule>} />
+              <Route path="/sales/return" element={<RequireModule module="SALES"><SalesReturn /></RequireModule>} />
+              <Route path="/sales/credit-note" element={<RequireModule module="SALES"><CreditNote /></RequireModule>} />
+              <Route path="/purchases/order" element={<RequireModule module="PURCHASES"><PurchaseOrder /></RequireModule>} />
+              <Route path="/purchases/receipt" element={<RequireModule module="PURCHASES"><GoodsReceipt /></RequireModule>} />
+              <Route path="/purchases/invoice" element={<RequireModule module="PURCHASES"><PurchaseInvoice /></RequireModule>} />
+              <Route path="/purchases/return" element={<RequireModule module="PURCHASES"><PurchaseReturn /></RequireModule>} />
+              <Route path="/purchases/debit-note" element={<RequireModule module="PURCHASES"><DebitNote /></RequireModule>} />
+              <Route path="/trading/buy" element={<RequireModule module="TRADING"><Buy /></RequireModule>} />
+              <Route path="/trading/sell" element={<RequireModule module="TRADING"><Sell /></RequireModule>} />
+              <Route path="/trading/transactions" element={<RequireModule module="TRADING"><Transactions /></RequireModule>} />
+              <Route path="/trading/profit" element={<RequireModule module="TRADING"><ProfitCalc /></RequireModule>} />
+              <Route path="/accounts/chart" element={<RequireModule module="ACCOUNTS"><ChartOfAccounts /></RequireModule>} />
+              <Route path="/accounts/ledger" element={<RequireModule module="ACCOUNTS"><GeneralLedger /></RequireModule>} />
+              <Route path="/accounts/journal" element={<RequireModule module="ACCOUNTS"><JournalEntries /></RequireModule>} />
+              <Route path="/accounts/cash-bank" element={<RequireModule module="ACCOUNTS"><CashBankVoucher /></RequireModule>} />
               {/* The old separate paths now land on the combined screen so
                   existing links and bookmarks keep working. */}
-              <Route path="/accounts/cash" element={<CashBankVoucher />} />
-              <Route path="/accounts/bank" element={<CashBankVoucher />} />
-              <Route path="/accounts/receivables-payables" element={<ReceivablesPayables />} />
+              <Route path="/accounts/cash" element={<RequireModule module="ACCOUNTS"><CashBankVoucher /></RequireModule>} />
+              <Route path="/accounts/bank" element={<RequireModule module="ACCOUNTS"><CashBankVoucher /></RequireModule>} />
+              <Route path="/accounts/receivables-payables" element={<RequireModule module="ACCOUNTS"><ReceivablesPayables /></RequireModule>} />
               {/* Old separate paths keep working. */}
-              <Route path="/accounts/receivables" element={<ReceivablesPayables />} />
-              <Route path="/accounts/payables" element={<ReceivablesPayables />} />
-              <Route path="/accounts/payments-receipts" element={<PaymentsReceipts />} />
+              <Route path="/accounts/receivables" element={<RequireModule module="ACCOUNTS"><ReceivablesPayables /></RequireModule>} />
+              <Route path="/accounts/payables" element={<RequireModule module="ACCOUNTS"><ReceivablesPayables /></RequireModule>} />
+              <Route path="/accounts/payments-receipts" element={<RequireModule module="ACCOUNTS"><PaymentsReceipts /></RequireModule>} />
               {/* Old separate paths keep working. */}
-              <Route path="/accounts/payments" element={<PaymentsReceipts />} />
-              <Route path="/accounts/receipts" element={<PaymentsReceipts />} />
-              <Route path="/accounts/expenses" element={<Expenses />} />
-              <Route path="/accounts/tax" element={<TaxLedger />} />
-              <Route path="/accounts/trial-balance" element={<TrialBalance />} />
-              <Route path="/accounts/pl" element={<ProfitLoss />} />
-              <Route path="/accounts/balance-sheet" element={<BalanceSheet />} />
-              <Route path="/accounts/day-book" element={<DayBook />} />
-              <Route path="/reports/sales" element={<SalesReport />} />
-              <Route path="/reports/purchase" element={<PurchaseReport />} />
-              <Route path="/reports/stock" element={<StockReport />} />
-              <Route path="/reports/outstanding" element={<Outstanding />} />
-              <Route path="/reports/ledger" element={<LedgerReport />} />
-              <Route path="/reports/gst" element={<GstReport />} />
-              <Route path="/reports/financials" element={<Financials />} />
+              <Route path="/accounts/payments" element={<RequireModule module="ACCOUNTS"><PaymentsReceipts /></RequireModule>} />
+              <Route path="/accounts/receipts" element={<RequireModule module="ACCOUNTS"><PaymentsReceipts /></RequireModule>} />
+              <Route path="/accounts/expenses" element={<RequireModule module="ACCOUNTS"><Expenses /></RequireModule>} />
+              <Route path="/accounts/tax" element={<RequireModule module="ACCOUNTS"><TaxLedger /></RequireModule>} />
+              <Route path="/accounts/trial-balance" element={<RequireModule module="ACCOUNTS"><TrialBalance /></RequireModule>} />
+              <Route path="/accounts/pl" element={<RequireModule module="ACCOUNTS"><ProfitLoss /></RequireModule>} />
+              <Route path="/accounts/balance-sheet" element={<RequireModule module="ACCOUNTS"><BalanceSheet /></RequireModule>} />
+              <Route path="/accounts/day-book" element={<RequireModule module="ACCOUNTS"><DayBook /></RequireModule>} />
+              <Route path="/reports/sales" element={<RequireModule module="REPORTS"><SalesReport /></RequireModule>} />
+              <Route path="/reports/purchase" element={<RequireModule module="REPORTS"><PurchaseReport /></RequireModule>} />
+              <Route path="/reports/stock" element={<RequireModule module="REPORTS"><StockReport /></RequireModule>} />
+              <Route path="/reports/outstanding" element={<RequireModule module="REPORTS"><Outstanding /></RequireModule>} />
+              <Route path="/reports/ledger" element={<RequireModule module="REPORTS"><LedgerReport /></RequireModule>} />
+              <Route path="/reports/gst" element={<RequireModule module="REPORTS"><GstReport /></RequireModule>} />
+              <Route path="/reports/financials" element={<RequireModule module="REPORTS"><Financials /></RequireModule>} />
               {/* Catch-all for all the new ERP routes for now */}
               <Route path="*" element={
                 <div className="glass-panel" style={{padding: '2rem'}}>
@@ -251,6 +256,7 @@ function App() {
         </main>
       </div>
     </CurrencyProvider>
+    </PermissionProvider>
   )
 }
 
