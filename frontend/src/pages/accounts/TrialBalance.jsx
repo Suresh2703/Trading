@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Scale, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { accountingReports } from '../../api';
 import { useCurrency } from '../../context/CurrencyContext';
+import ExportMenu from '../../components/ExportMenu';
 import '../../components/MasterPage.css';
 import '../../components/VoucherPage.css';
 
@@ -10,6 +11,8 @@ export default function TrialBalance() {
   const [asOf, setAsOf] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const reportRef = useRef(null);
 
   const { symbol } = useCurrency();
   const money = v => `${symbol}${Number(v || 0).toFixed(2)}`;
@@ -30,7 +33,7 @@ export default function TrialBalance() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div style={{ paddingBottom: '2rem' }} ref={reportRef}>
       <div className="products-header">
         <div className="page-title">
           <h1>Trial Balance</h1>
@@ -42,6 +45,7 @@ export default function TrialBalance() {
             <input type="date" className="config-input" value={asOf}
                    onChange={e => setAsOf(e.target.value)} />
           </label>
+          <ExportMenu containerRef={reportRef} disabled={isLoading} />
           <button className="btn-primary"
                   style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                   onClick={load} disabled={isLoading}>
