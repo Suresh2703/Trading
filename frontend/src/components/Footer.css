@@ -1,0 +1,28 @@
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  /* Header and footer are fixed furniture; only the content between them
+     scrolls, so neither may be squeezed by a long page. */
+  flex-shrink: 0;
+}
+
+.footer-brand {
+  font-weight: 500;
+}
+
+.footer-meta {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  /* Small print would eat the content area on a phone. */
+  .footer-meta {
+    display: none;
+  }
+}

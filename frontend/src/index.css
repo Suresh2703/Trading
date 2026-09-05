@@ -57,11 +57,23 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   padding: 2rem;
   /* Without this the content refuses to shrink below its widest table and the
      reclaimed space does nothing. */
   min-width: 0;
+  /* The scroll belongs to .content-scroll alone. Leaving it here as well gave
+     the shell two nested scrollbars, and let the top bar scroll away. */
+  overflow: hidden;
+}
+
+/* The only thing that scrolls: the top bar and footer sit outside it and stay
+   put while a long report moves past them. */
+.content-scroll {
+  flex: 1;
+  overflow: auto;
+  /* A flex item defaults to min-height:auto, so it refuses to shrink below its
+     own content — that is what pushed the scroll up to the parent. */
+  min-height: 0;
 }
 
 /* --- Collapsible sidebar -------------------------------------------------
