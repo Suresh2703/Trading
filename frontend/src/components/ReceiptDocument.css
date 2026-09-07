@@ -34,7 +34,11 @@
 .rcpt {
   box-sizing: border-box;
   width: 72mm;
-  margin: 0 auto;
+  /* Flush left, not centred. On paper an auto margin would push the receipt
+     into the middle of the sheet, which wastes the left edge a till roll or a
+     hand-fed slip is aligned to. On screen the preview's grid does the
+     centring, so it stays centred there without this. */
+  margin: 0;
   padding: 3mm;
   background: #fff;
   color: #000;
