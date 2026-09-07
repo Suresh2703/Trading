@@ -1003,3 +1003,112 @@ class StockBalance(BaseModel):
     in_qty: float
     out_qty: float
     on_hand: float
+
+
+# --- Point of sale ---------------------------------------------------------
+
+class PosLineCreate(BaseModel):
+    """A cart line. Price is sent from the till so a mid-sale price change
+    cannot silently reprice a scanned item."""
+    product_id: int
+    quantity: float = 1.0
+    unit_price: float = 0.0
+    discount_pct: float = 0.0
+    tax_id: Optional[int] = None
+
+
+class PosSaleCreate(BaseModel):
+    customer_id: Optional[int] = None      # falls back to the walk-in customer
+    warehouse_id: Optional[int] = None     # falls back to the default warehouse
+    payment_method: str = "CASH"
+    amount_tendered: float = 0.0
+    notes: Optional[str] = None
+    lines: List[PosLineCreate] = []
+
+
+class PosSale(BaseModel):
+    id: int
+    receipt_no: str
+    sale_date: date
+    customer_id: int
+    warehouse_id: int
+    delivery_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    journal_entry_id: Optional[int] = None
+    payment_method: str
+    amount_total: float
+    amount_tendered: float
+    change_given: float
+    cashier_id: Optional[int] = None
+    status: str
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    customer: Optional[Customer] = None
+    warehouse: Optional[Warehouse] = None
+    # The invoice carries the lines and the tax breakdown, so a receipt can be
+    # reprinted from this one payload without a second call.
+    invoice: Optional[SalesDocument] = None
+
+    # Filled in by the router: the name lives on the user rather than the sale,
+    # and a computed property cannot be written to.
+    cashier_name: Optional[str] = None
+
+    @computed_field
+    @property
+    def line_count(self) -> int:
+        return len(self.invoice.lines) if self.invoice else 0
+
+    class Config:
+        from_attributes = True
+
+
+class PosProduct(BaseModel):
+    """A product as the till needs it: price, tax and what is actually on the
+    shelf, so a cashier is not offered something that cannot be sold."""
+    id: int
+    ticker: Optional[str] = None
+    name: Optional[str] = None
+    current_price: float = 0.0
+    unit_name: Optional[str] = None
+    category_name: Optional[str] = None
+    tax_id: Optional[int] = None
+    tax_rate: float = 0.0
+    on_hand: float = 0.0
+
+
+class PosPaymentMethod(BaseModel):
+    code: str
+    label: str
+    # Which account the money lands in. Null means it stays in receivables.
+    account_id: Optional[int] = None
+    account_name: Optional[str] = None
+    takes_tender: bool = False
+
+
+class PosTerminal(BaseModel):
+    """Everything the till needs to open, in one call."""
+    warehouse: Optional[Warehouse] = None
+    warehouses: List[Warehouse] = []
+    walk_in_customer: Optional[Customer] = None
+    customers: List[Customer] = []
+    payment_methods: List[PosPaymentMethod] = []
+    taxes: List[Tax] = []
+    next_receipt_no: str
+
+
+class PosSummaryRow(BaseModel):
+    payment_method: str
+    sale_count: int
+    total: float
+
+
+class PosSummary(BaseModel):
+    """The day's takings, for cashing up."""
+    date_from: date
+    date_to: date
+    sale_count: int
+    gross_total: float
+    voided_count: int
+    voided_total: float
+    by_method: List[PosSummaryRow] = []

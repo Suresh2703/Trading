@@ -18,6 +18,7 @@ import StockIn from './pages/inventory/StockIn';
 import StockOut from './pages/inventory/StockOut';
 import StockTransfer from './pages/inventory/StockTransfer';
 import StockAdjustment from './pages/inventory/StockAdjustment';
+import PointOfSale from './pages/sales/PointOfSale';
 import SalesOrder from './pages/sales/SalesOrder';
 import Delivery from './pages/sales/Delivery';
 import SalesInvoice from './pages/sales/SalesInvoice';
@@ -200,6 +201,7 @@ function App() {
               <Route path="/inventory/out" element={<RequireModule module="INVENTORY"><StockOut /></RequireModule>} />
               <Route path="/inventory/transfer" element={<RequireModule module="INVENTORY"><StockTransfer /></RequireModule>} />
               <Route path="/inventory/adjustment" element={<RequireModule module="INVENTORY"><StockAdjustment /></RequireModule>} />
+              <Route path="/sales/pos" element={<RequireModule module="SALES"><PointOfSale /></RequireModule>} />
               <Route path="/sales/order" element={<RequireModule module="SALES"><SalesOrder /></RequireModule>} />
               <Route path="/sales/delivery" element={<RequireModule module="SALES"><Delivery /></RequireModule>} />
               <Route path="/sales/invoice" element={<RequireModule module="SALES"><SalesInvoice /></RequireModule>} />

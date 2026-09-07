@@ -303,3 +303,18 @@ export const createUser = (userData) =>
     // Goes through `request` so a role rejection surfaces its real message
     // instead of a generic failure.
     request('/users/', { method: 'POST', body: JSON.stringify(userData) });
+
+// --- Point of sale ---------------------------------------------------------
+export const posApi = {
+    // Everything the till needs to open: warehouse, walk-in customer, payment
+    // methods and the next receipt number, in one call.
+    terminal: () => request('/pos/terminal'),
+    products: (params = '') => request(`/pos/products${params}`),
+    checkout: (payload) => request('/pos/sales', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    sales: (params = '') => request(`/pos/sales${params}`),
+    sale: (id) => request(`/pos/sales/${id}`),
+    summary: (params = '') => request(`/pos/summary${params}`),
+    void: (id) => request(`/pos/sales/${id}/void`, { method: 'POST' })
+};

@@ -209,6 +209,13 @@ seed(models.Tax, [
     {"name": "GST 28%", "tax_type": "GST", "rate": 28.0, "description": "Luxury / demerit goods"},
 ], key="name")
 
+# Counter sales need a customer, because a sales document must have one. This
+# is the anonymous shopper every till falls back to.
+seed(models.Customer, [
+    {"code": "WALKIN", "name": "Walk-in Customer",
+     "country": "India", "is_active": True},
+], key="code")
+
 print("Seeding a standard chart of accounts...")
 # A conventional 4-digit chart, enough to record real transactions on day one.
 # CASH / BANK / RECEIVABLE / PAYABLE / TAX groups are the ones the ledger

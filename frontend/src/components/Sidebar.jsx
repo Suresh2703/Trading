@@ -42,6 +42,7 @@ const menuItems = [
   {
     name: 'Sales', icon: ShoppingCart, module: 'SALES',
     subItems: [
+      { name: 'Point of Sale', path: '/sales/pos' },
       { name: 'Sales Order', path: '/sales/order' },
       { name: 'Delivery', path: '/sales/delivery' },
       { name: 'Sales Invoice', path: '/sales/invoice' },

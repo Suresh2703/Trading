@@ -500,3 +500,51 @@ class RolePermission(Base):
     can_edit = Column(Boolean, nullable=False, default=False)
 
     role = relationship("Role", back_populates="permissions")
+
+
+class PosSale(Base):
+    """One counter sale, tying together the documents a checkout produces.
+
+    A POS sale is deliberately not a new kind of sales document. Ringing one up
+    raises the same delivery and invoice a manual counter sale would, so it
+    reaches the sales reports, the GST return and the dashboard without any of
+    them needing to know POS exists — and stock leaves through the one path
+    that already knows how to reverse itself.
+
+    What is left is what only a till knows: how it was paid, what was handed
+    over, who rang it up. That is this table.
+    """
+    __tablename__ = "pos_sales"
+    __table_args__ = (
+        UniqueConstraint("receipt_no", name="uq_pos_sale_receipt_no"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    receipt_no = Column(String(50), nullable=False, index=True)
+    sale_date = Column(Date, nullable=False, default=datetime.date.today, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False, index=True)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False, index=True)
+
+    # The documents this checkout raised. Nullable so a void can clear the
+    # receipt posting without losing the sale record.
+    delivery_id = Column(Integer, ForeignKey("sales_documents.id"), nullable=True)
+    invoice_id = Column(Integer, ForeignKey("sales_documents.id"), nullable=True)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True)
+
+    payment_method = Column(String(20), nullable=False, default="CASH", index=True)
+    amount_total = Column(Float, nullable=False, default=0.0)
+    # Only meaningful for cash: what the customer handed over, and what went back.
+    amount_tendered = Column(Float, nullable=False, default=0.0)
+    change_given = Column(Float, nullable=False, default=0.0)
+
+    cashier_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    status = Column(String(20), nullable=False, default="COMPLETED", index=True)
+    notes = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    customer = relationship("Customer")
+    warehouse = relationship("Warehouse")
+    cashier = relationship("User")
+    delivery = relationship("SalesDocument", foreign_keys=[delivery_id])
+    invoice = relationship("SalesDocument", foreign_keys=[invoice_id])
+    journal_entry = relationship("JournalEntry")
