@@ -1,0 +1,42 @@
+/* The brand lockup: the mark, optionally beside the wordmark.
+
+   Lives with the component rather than in Sidebar.css because two screens now
+   use it and neither owns it — the same reason TopBar and Footer keep their
+   own. It would happen to work from Sidebar.css today, since App imports the
+   sidebar statically and its styles end up in the bundle regardless of what is
+   rendered; that is a coincidence of the import graph, not something the login
+   screen should depend on. */
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.app-logo img {
+  flex-shrink: 0;
+  display: block;
+  /* The mark carries its own silhouette and transparent corners, so it is not
+     cropped or boxed here. */
+  object-fit: contain;
+}
+
+.app-logo-word {
+  /* Smaller than the wordmark used to be: it now shares the row with a 34px
+     mark, and at the old size the two together came within half a pixel of the
+     sidebar's inner width — close enough that a different font rendering would
+     have clipped the "g". */
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  /* The rail animates narrower before the label fades, so the wordmark must
+     not force the sidebar wider than the rail during the transition. */
+  overflow: hidden;
+}
+
+.app-logo.is-rail {
+  justify-content: center;
+  gap: 0;
+}

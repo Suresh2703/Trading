@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import './Logo.css';
+
 /**
  * The application mark, from `public/logo.png`.
  *
