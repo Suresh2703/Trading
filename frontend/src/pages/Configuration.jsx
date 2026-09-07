@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { Building, Globe, Shield, Bell, Key, Save } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import { usePermissions } from '../context/PermissionContext';
+import SettingsSection from './config/SettingsSection';
+import ApiKeysPanel from './config/ApiKeysPanel';
+import NotificationPreview from './config/NotificationPreview';
 import './Configuration.css';
 
 export default function Configuration() {
   const [activeTab, setActiveTab] = useState('general');
   const { currency, updateCurrency } = useCurrency();
+  // Writing settings is administrator-only on the server; reflecting that here
+  // keeps the screen honest rather than offering a save that will be refused.
+  const { canEdit } = usePermissions();
+  const mayEdit = canEdit('SETTINGS');
 
   return (
     <div className="config-container">
@@ -14,11 +22,8 @@ export default function Configuration() {
           <h1>System Configuration</h1>
           <p>Manage your ERP settings, defaults, and integrations.</p>
         </div>
-        <div className="dashboard-controls">
-          <button className="btn-primary" style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-            <Save size={16} /> Save Changes
-          </button>
-        </div>
+        {/* Each section saves itself, so there is no page-wide button that
+            would have to guess which tab it applied to. */}
       </div>
 
       <div className="config-layout">
@@ -129,11 +134,37 @@ export default function Configuration() {
             </div>
           )}
 
-          {(activeTab === 'security' || activeTab === 'notifications' || activeTab === 'api') && (
-             <div className="animate-fade-in">
-                <h2 className="config-section-title" style={{textTransform: 'capitalize'}}>{activeTab} Settings</h2>
-                <p style={{color: 'var(--text-muted)'}}>Configuration options for this module are currently being built.</p>
-             </div>
+          {activeTab === 'security' && (
+            <SettingsSection
+              section="security"
+              title="Security"
+              blurb="Password rules, lockout and session length. Each applies the
+                     next time it is relevant — a tightened password rule at the
+                     next password change, a session length at the next sign-in."
+              canEdit={mayEdit} />
+          )}
+
+          {activeTab === 'notifications' && (
+            <SettingsSection
+              section="notifications"
+              title="Notifications"
+              blurb="Which alerts the bell raises, and at what thresholds. Alerts
+                     are worked out from the live books each time they are asked
+                     for, so one clears itself once the cause is dealt with."
+              canEdit={mayEdit}>
+              <NotificationPreview />
+            </SettingsSection>
+          )}
+
+          {activeTab === 'api' && (
+            <div className="animate-fade-in">
+              <SettingsSection
+                section="api"
+                title="API integrations"
+                blurb="Access for other systems calling this API."
+                canEdit={mayEdit} />
+              <ApiKeysPanel canEdit={mayEdit} />
+            </div>
           )}
         </div>
       </div>

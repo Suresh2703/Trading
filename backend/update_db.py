@@ -168,6 +168,12 @@ with engine.begin() as conn:
     else:
         print("  - pos_sales not created yet, skipping")
 
+print("Adding login lockout columns...")
+with engine.begin() as conn:
+    add_column(conn, "users", "failed_logins", "INT NOT NULL DEFAULT 0")
+    add_column(conn, "users", "locked_until", "DATETIME NULL")
+    add_column(conn, "users", "last_login_at", "DATETIME NULL")
+
 db = SessionLocal()
 
 def seed(model, rows, key):

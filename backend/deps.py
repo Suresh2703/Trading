@@ -13,7 +13,22 @@ from database import get_db
 
 
 def get_current_user(authorization: Optional[str] = Header(None),
+                     x_api_key: Optional[str] = Header(None),
                      db: Session = Depends(get_db)) -> models.User:
+    # A machine caller presents a key instead of signing in. It resolves to a
+    # caller carrying the key's role, so every permission check downstream
+    # applies to it unchanged rather than needing a second set of rules.
+    if x_api_key:
+        # Imported here rather than at module scope: routers.api_keys depends on
+        # require_admin from this module, so a top-level import would cycle.
+        from routers.api_keys import user_for_api_key
+        holder = user_for_api_key(db, x_api_key)
+        if holder is None:
+            raise HTTPException(
+                status_code=401,
+                detail="That API key is not valid, has expired, or was revoked")
+        return holder
+
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Not signed in")
 

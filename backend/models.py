@@ -16,6 +16,12 @@ class User(Base):
     role = Column(String(20), nullable=False, default="USER", index=True)
     is_active = Column(Boolean, default=True)
 
+    # Lockout state. Counted on the account rather than by IP, because the
+    # thing being protected is the account and an attacker can change address.
+    failed_logins = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+
     accounts = relationship("Account", back_populates="owner")
     orders = relationship("Order", back_populates="owner")
 
@@ -562,3 +568,55 @@ class PosSale(Base):
     delivery = relationship("SalesDocument", foreign_keys=[delivery_id])
     invoice = relationship("SalesDocument", foreign_keys=[invoice_id])
     journal_entry = relationship("JournalEntry")
+
+
+class AppSetting(Base):
+    """One system-wide setting.
+
+    Key/value rather than a wide table so adding a setting needs no migration,
+    and stored as text with the registry in settings_registry.py owning the
+    type and bounds — one place decides what a setting means, rather than the
+    schema and the screen each holding half the answer.
+
+    Distinct from UserPreference: these apply to everyone, and only an
+    administrator may change them.
+    """
+    __tablename__ = "app_settings"
+    __table_args__ = (
+        UniqueConstraint("setting_key", name="uq_app_setting_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    setting_key = Column(String(80), nullable=False, index=True)
+    setting_value = Column(String(1000), nullable=True)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                        onupdate=datetime.datetime.utcnow)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+
+class ApiKey(Base):
+    """A credential letting another system call this API.
+
+    Only a hash of the key is kept, exactly as for a password: a leaked
+    database must not hand over working keys, and the plain key is shown once
+    at creation and never again. The prefix is stored in clear so a key can be
+    recognised in a list without being reversible.
+    """
+    __tablename__ = "api_keys"
+    __table_args__ = (
+        UniqueConstraint("key_prefix", name="uq_api_key_prefix"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    key_prefix = Column(String(16), nullable=False, index=True)
+    key_hash = Column(String(255), nullable=False)
+    # Which role the key acts as, so a key cannot outrank the person who made it.
+    role = Column(String(20), nullable=False, default="VIEWER")
+    is_active = Column(Boolean, nullable=False, default=True)
+    expires_at = Column(DateTime, nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    creator = relationship("User")

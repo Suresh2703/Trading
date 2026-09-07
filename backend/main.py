@@ -8,7 +8,7 @@ from database import engine
 from routers import (users, accounts, products, orders, categories, units,
                      customers, suppliers, taxes, opening_stock, stock_movements,
                      sales_documents, purchase_documents, trades, accounting, reports, warehouses, roles,
-                     pos)
+                     pos, settings, api_keys, notifications)
 from app.trading import router as trading_router
 from deps import get_current_user, require_module
 import modules as M
@@ -54,6 +54,12 @@ app.include_router(users.router)
 # Roles declare their own requirements: /roles/me has to stay open to
 # anyone signed in, or the menu cannot be built.
 app.include_router(roles.router)
+# Reading settings has to stay open to any signed-in user — the app needs the
+# values to behave correctly; writing them is admin-only inside the router.
+app.include_router(settings.router)
+# Alerts are computed from whatever the caller may already see.
+app.include_router(notifications.router)
+app.include_router(api_keys.router, dependencies=guard(M.SETTINGS))
 app.include_router(accounts.router, dependencies=guard(M.ACCOUNTS))
 app.include_router(products.router, dependencies=guard(M.MASTER_DATA))
 app.include_router(orders.router, dependencies=guard(M.SALES))

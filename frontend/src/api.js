@@ -318,3 +318,29 @@ export const posApi = {
     summary: (params = '') => request(`/pos/summary${params}`),
     void: (id) => request(`/pos/sales/${id}/void`, { method: 'POST' })
 };
+
+// --- System configuration --------------------------------------------------
+export const settingsApi = {
+    // Readable by anyone signed in; the server refuses non-admin writes.
+    all: () => request('/settings/'),
+    saveSection: (section, values) => request(`/settings/${section}`, {
+        method: 'PUT', body: JSON.stringify({ values })
+    }),
+    passwordPolicy: () => request('/settings/password-policy')
+};
+
+export const apiKeysApi = {
+    list: () => request('/api-keys/'),
+    // The plain key comes back on this call and never again.
+    create: (payload) => request('/api-keys/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/api-keys/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/api-keys/${id}`, { method: 'DELETE' })
+};
+
+export const notificationsApi = {
+    feed: () => request('/notifications/')
+};

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, computed_field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime, date
 
 # --- Category ---
@@ -1132,3 +1132,78 @@ class PosSummary(BaseModel):
     voided_count: int
     voided_total: float
     by_method: List[PosSummaryRow] = []
+
+
+# --- System configuration --------------------------------------------------
+
+class SettingField(BaseModel):
+    """One setting, carrying enough for a screen to render and police it."""
+    key: str
+    label: str
+    help: Optional[str] = None
+    type: str                       # "int" | "bool"
+    value: Any
+    default: Any
+    min: Optional[int] = None
+    max: Optional[int] = None
+
+
+class SettingSection(BaseModel):
+    section: str
+    fields: List[SettingField] = []
+
+
+class SettingUpdate(BaseModel):
+    values: Dict[str, Any] = {}
+
+
+class PasswordPolicy(BaseModel):
+    min_length: int
+    require_upper: bool
+    require_digit: bool
+    require_symbol: bool
+
+
+class ApiKeyCreate(BaseModel):
+    name: str
+    role: str = "VIEWER"
+    # None falls back to the configured default lifetime.
+    expires_days: Optional[int] = None
+
+
+class ApiKeyUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ApiKey(BaseModel):
+    id: int
+    name: str
+    key_prefix: str
+    role: str
+    is_active: bool
+    expires_at: Optional[datetime] = None
+    last_used_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    created_by_name: Optional[str] = None
+    # Returned only by the call that creates the key, and never again.
+    plain_key: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class Notification(BaseModel):
+    level: str                      # danger | warning | info
+    category: str
+    title: str
+    detail: str
+    link: Optional[str] = None
+
+
+class NotificationFeed(BaseModel):
+    count: int = 0
+    danger: int = 0
+    warning: int = 0
+    info: int = 0
+    items: List[Notification] = []
