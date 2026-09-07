@@ -3,6 +3,9 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  /* Fixed furniture: on a short viewport the content area gives up space, not
+     the header. */
+  flex-shrink: 0;
 }
 
 .search-bar {

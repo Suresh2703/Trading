@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import Footer from './components/Footer';
 import Overview from './pages/Overview';
 import Configuration from './pages/Configuration';
 import AuthUsers from './pages/AuthUsers';
@@ -181,7 +182,7 @@ function App() {
           <TopBar onLogout={handleLogout}
                   sidebarOpen={sidebarOpen}
                   onToggleSidebar={() => setSidebarPreference(!sidebarOpen)} />
-          <div className="animate-fade-in" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="content-scroll animate-fade-in">
             <Routes>
               <Route path="/" element={<RequireModule module="DASHBOARD"><Overview /></RequireModule>} />
               <Route path="/settings" element={<RequireModule module="SETTINGS"><Configuration /></RequireModule>} />
@@ -253,6 +254,7 @@ function App() {
               } />
             </Routes>
           </div>
+          <Footer />
         </main>
       </div>
     </CurrencyProvider>
