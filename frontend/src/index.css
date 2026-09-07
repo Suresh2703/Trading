@@ -120,6 +120,17 @@ body {
     backdrop-filter: blur(2px);
   }
 
+  /* The backdrop covers the whole viewport, top bar included, so without this
+     every control up there — the settings gear, the alerts bell, even the
+     toggle that closes the sidebar — is dead while the sidebar is open, and a
+     click on one silently closes the sidebar instead of doing what it says.
+     Lifting the header above the backdrop keeps it working; the sidebar stays
+     above both at 120, so clicking the dimmed content still closes it. */
+  .topbar {
+    position: relative;
+    z-index: 115;
+  }
+
   .main-content {
     padding: 1rem;
   }
