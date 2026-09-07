@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, AlertTriangle, Check,
-  Receipt, Printer, RotateCcw, X, Banknote, CreditCard, Smartphone, UserCheck
+  Receipt, Printer, RotateCcw, X, Banknote, CreditCard, Smartphone, UserCheck, Eye
 } from 'lucide-react';
 
 import { posApi } from '../../api';
 import { useCurrency } from '../../context/CurrencyContext';
+import ReceiptDocument from '../../components/ReceiptDocument';
 import '../../components/MasterPage.css';
 import '../../components/VoucherPage.css';
 import './PointOfSale.css';
@@ -39,8 +40,13 @@ export default function PointOfSale() {
   const [receipt, setReceipt] = useState(null);
   const [recent, setRecent] = useState([]);
   const [showRecent, setShowRecent] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   const searchRef = useRef(null);
+  // Which receipts have already come off the printer this session, so a second
+  // copy is stamped rather than passing for an original.
+  const printedRef = useRef(new Set());
 
   // --- opening the till ----------------------------------------------------
   useEffect(() => {
@@ -151,7 +157,7 @@ export default function PointOfSale() {
           tax_id: taxId ? Number(taxId) : null
         }))
       });
-      setReceipt(sale);
+      openReceipt(sale);
       clearCart();
       loadProducts();          // stock has moved
       searchRef.current?.focus();
@@ -160,6 +166,25 @@ export default function PointOfSale() {
     } finally {
       setIsPosting(false);
     }
+  };
+
+  // Opening a sale from history is by definition a reprint, so it is stamped
+  // even on its first trip through the printer here — a copy handed over
+  // should never be mistakable for the original.
+  const openReceipt = (sale, { reprint = false } = {}) => {
+    if (reprint) printedRef.current.add(sale.id);
+    setIsDuplicate(printedRef.current.has(sale.id));
+    setPreview(false);
+    setReceipt(sale);
+  };
+
+  const printReceipt = () => {
+    if (!receipt) return;
+    const already = printedRef.current.has(receipt.id);
+    setIsDuplicate(already);
+    printedRef.current.add(receipt.id);
+    // Let React paint the DUPLICATE stamp before the print dialog blocks.
+    setTimeout(() => window.print(), 60);
   };
 
   const openRecent = async () => {
@@ -403,18 +428,32 @@ export default function PointOfSale() {
 
       {receipt && (
         <ReceiptModal sale={receipt} money={money}
-                      onClose={() => setReceipt(null)} />
+                      duplicate={isDuplicate}
+                      preview={preview}
+                      onTogglePreview={() => setPreview((p) => !p)}
+                      onPrint={printReceipt}
+                      onClose={() => { setReceipt(null); setPreview(false); }} />
+      )}
+
+      {/* Lives outside the modal because the print stylesheet hides the whole
+          app; it is portalled to <body>. Normally only the printer sees it —
+          preview shows the very same markup rather than a second rendering
+          that could drift from what actually prints. */}
+      {receipt && (
+        <ReceiptDocument sale={receipt} symbol={symbol} duplicate={isDuplicate}
+                         preview={preview} onDismissPreview={() => setPreview(false)} />
       )}
 
       {showRecent && (
         <RecentModal sales={recent} money={money} onVoid={voidSale}
-                     onOpen={setReceipt} onClose={() => setShowRecent(false)} />
+                     onOpen={(s) => openReceipt(s, { reprint: true })}
+                     onClose={() => setShowRecent(false)} />
       )}
     </div>
   );
 }
 
-function ReceiptModal({ sale, money, onClose }) {
+function ReceiptModal({ sale, money, duplicate, preview, onTogglePreview, onPrint, onClose }) {
   const invoice = sale.invoice;
   return (
     <div className="master-modal-backdrop" onClick={onClose}>
@@ -426,6 +465,7 @@ function ReceiptModal({ sale, money, onClose }) {
             {sale.sale_date} · {sale.payment_method}
             {sale.cashier_name ? ` · ${sale.cashier_name}` : ''}
           </p>
+          {duplicate && <div className="pos-dup-flag">Reprint — will print as DUPLICATE</div>}
         </div>
 
         <div className="pos-receipt-body">
@@ -461,7 +501,10 @@ function ReceiptModal({ sale, money, onClose }) {
         </div>
 
         <div className="master-modal-actions">
-          <button className="btn-ghost" onClick={() => window.print()}>
+          <button className="btn-ghost" onClick={onTogglePreview}>
+            <Eye size={15} /> {preview ? 'Hide preview' : 'Preview'}
+          </button>
+          <button className="btn-ghost" onClick={onPrint}>
             <Printer size={15} /> Print
           </button>
           <button className="btn-primary" onClick={onClose}>New sale</button>

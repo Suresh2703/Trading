@@ -1,0 +1,192 @@
+/* The receipt exists for the printer. On screen the modal already shows the
+   sale, so this stays out of the way — except when `.rcpt-preview` is set,
+   which is how the POS screen offers a look before printing. */
+.receipt-print-root {
+  display: none;
+}
+
+/* Preview shows the identical markup on screen, floated above the modal, so
+   what is checked is genuinely what prints rather than a second rendering
+   that could drift. */
+.receipt-print-root.rcpt-preview {
+  display: grid;
+  place-items: start center;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  padding: 2rem 1rem;
+  overflow: auto;
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.rcpt-preview .rcpt {
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  padding: 4mm 3mm;
+}
+
+.rcpt {
+  /* 80mm roll less the printer's own margins. */
+  width: 72mm;
+  margin: 0 auto;
+  padding: 2mm 0;
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.42;
+}
+
+.rcpt-head {
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.rcpt-head h1 {
+  margin: 0 0 1mm;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rcpt-sub {
+  font-size: 9.5px;
+}
+
+.rcpt-duplicate,
+.rcpt-void {
+  margin: 1.5mm 0;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.rcpt-void {
+  /* A voided receipt must never be mistaken for a valid one. */
+  border: 1px solid #000;
+  padding: 1mm 0;
+}
+
+.rcpt-rule {
+  border-top: 1px dashed #000;
+  margin: 2mm 0;
+}
+
+.rcpt-meta div,
+.rcpt-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 4mm;
+}
+
+.rcpt-meta span:first-child,
+.rcpt-totals span:first-child {
+  white-space: nowrap;
+}
+
+.rcpt-meta span:last-child,
+.rcpt-totals span:last-child {
+  text-align: right;
+  word-break: break-word;
+}
+
+.rcpt-items {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rcpt-items th {
+  padding-bottom: 1mm;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 1px solid #000;
+}
+
+.rcpt-items th.num,
+.rcpt-items td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rcpt-items td {
+  padding: 1mm 0;
+  vertical-align: top;
+}
+
+.rcpt-items td:first-child {
+  padding-right: 2mm;
+}
+
+.rcpt-item-name {
+  display: block;
+}
+
+.rcpt-item-code {
+  display: block;
+  font-size: 9px;
+}
+
+.rcpt-totals .grand {
+  margin-top: 1mm;
+  padding-top: 1mm;
+  border-top: 1px solid #000;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rcpt-foot {
+  text-align: center;
+  font-size: 9.5px;
+}
+
+.rcpt-thanks {
+  margin-top: 2mm;
+  font-weight: 700;
+}
+
+/* --- printing ------------------------------------------------------------ */
+
+@media print {
+  /* The app shell is a fixed-height, overflow-hidden flex layout. Printed as
+     it stands it yields a single clipped page of dark chrome, so the whole
+     thing is taken out and only the receipt is left. */
+  #root {
+    display: none !important;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .receipt-print-root,
+  .receipt-print-root.rcpt-preview {
+    display: block !important;
+    position: static !important;
+  }
+
+  .rcpt {
+    width: auto;
+    margin: 0;
+    /* Till rolls are monochrome; forcing the colours stops a browser dropping
+       the dashed rules and the boxed VOID stamp as "background graphics". */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* A receipt should not be broken across pages if it can be helped. */
+  .rcpt-items tr,
+  .rcpt-totals,
+  .rcpt-meta {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 3mm;
+  }
+}

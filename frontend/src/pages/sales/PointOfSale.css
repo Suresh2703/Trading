@@ -449,3 +449,14 @@
   max-width: 720px;
   width: 100%;
 }
+
+.pos-dup-flag {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
