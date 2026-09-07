@@ -19,16 +19,23 @@
   background: rgba(2, 6, 23, 0.72);
 }
 
+/* Preview may only add depth. Anything that changed the box would make the
+   preview a different size from the print, which is the one thing it exists
+   to rule out. */
 .rcpt-preview .rcpt {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  padding: 4mm 3mm;
 }
 
+/* The receipt's geometry, stated once and never restated — not in the preview
+   rule above, not in the print block below. Preview and print therefore wrap
+   text and place columns identically. Sized for an 80mm roll: 72mm of paper
+   inside the printer's 3mm page margins, with 3mm of its own quiet edge, so
+   the content column is 66mm in both. */
 .rcpt {
-  /* 80mm roll less the printer's own margins. */
+  box-sizing: border-box;
   width: 72mm;
   margin: 0 auto;
-  padding: 2mm 0;
+  padding: 3mm;
   background: #fff;
   color: #000;
   font-family: 'Courier New', ui-monospace, monospace;
@@ -169,10 +176,11 @@
   }
 
   .rcpt {
-    width: auto;
-    margin: 0;
-    /* Till rolls are monochrome; forcing the colours stops a browser dropping
-       the dashed rules and the boxed VOID stamp as "background graphics". */
+    /* Width, margin and padding are deliberately absent: the geometry above
+       stands, so what prints is the size that was previewed. Only colour
+       handling is print-specific — till rolls are monochrome, and forcing the
+       colours stops a browser dropping the dashed rules and the boxed VOID
+       stamp as "background graphics". */
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
