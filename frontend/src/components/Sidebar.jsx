@@ -27,6 +27,7 @@ const menuItems = [
       { name: 'Units', path: '/master/units' },
       { name: 'Warehouses', path: '/master/warehouses' },
       { name: 'Tax/GST', path: '/master/tax' },
+      { name: 'Holiday Calendar', path: '/master/holidays' },
     ]
   },
   {

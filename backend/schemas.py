@@ -1207,3 +1207,92 @@ class NotificationFeed(BaseModel):
     warning: int = 0
     info: int = 0
     items: List[Notification] = []
+
+
+# --- Notes -----------------------------------------------------------------
+
+class UserNoteBase(BaseModel):
+    title: str = ""
+    content: Optional[str] = None
+    pinned: bool = False
+
+
+class UserNoteCreate(UserNoteBase):
+    pass
+
+
+class UserNoteUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    pinned: Optional[bool] = None
+
+
+class UserNote(UserNoteBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    @computed_field
+    @property
+    def preview(self) -> str:
+        """First line of the body, for a list that has to fit many notes."""
+        body = (self.content or "").strip()
+        if not body:
+            return ""
+        first = body.splitlines()[0]
+        return first[:120] + ("..." if len(first) > 120 else "")
+
+    class Config:
+        from_attributes = True
+
+
+# --- Holidays ---------------------------------------------------------------
+
+class HolidayBase(BaseModel):
+    holiday_date: date
+    name: str
+    holiday_type: str = "PUBLIC"
+    is_recurring: bool = False
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class HolidayCreate(HolidayBase):
+    pass
+
+
+class HolidayUpdate(BaseModel):
+    holiday_date: Optional[date] = None
+    name: Optional[str] = None
+    holiday_type: Optional[str] = None
+    is_recurring: Optional[bool] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class Holiday(HolidayBase):
+    id: int
+    # True when this is a recurring holiday shown in a year other than the one
+    # it was entered against. Set when the projection is made — it cannot be
+    # derived afterwards, because the projection carries the viewed year's date.
+    projected: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class CalendarDay(BaseModel):
+    """One day as the calendar needs it."""
+    day: date
+    holiday: Optional[Holiday] = None
+    # True when the holiday is a recurring one shown in a year other than the
+    # one it was entered against — editing it edits the original.
+    projected: bool = False
+    is_weekend: bool = False
+
+
+class HolidayCalendar(BaseModel):
+    year: int
+    month: Optional[int] = None
+    days: List[CalendarDay] = []
+    holiday_count: int = 0

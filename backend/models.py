@@ -1,5 +1,5 @@
 from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, Float,
-                        DateTime, Date, UniqueConstraint)
+                        DateTime, Date, Text, UniqueConstraint)
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -620,3 +620,51 @@ class ApiKey(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     creator = relationship("User")
+
+
+class UserNote(Base):
+    """A note belonging to one person.
+
+    Kept on the server rather than in the browser so notes follow the user to
+    any machine, and scoped to the account: a note is never visible to anyone
+    else, including an administrator, because there is no endpoint that reads
+    another user's notes.
+    """
+    __tablename__ = "user_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
+                     nullable=False, index=True)
+    title = Column(String(200), nullable=False, default="")
+    # Text rather than a bounded String: a scratchpad that silently truncates
+    # is worse than one that holds whatever was typed.
+    content = Column(Text, nullable=True)
+    pinned = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                        onupdate=datetime.datetime.utcnow)
+
+
+class Holiday(Base):
+    """A non-working day.
+
+    One row per date, so the same day cannot be marked twice. A holiday that
+    falls on the same date every year is stored once and projected into
+    whichever year is being viewed, rather than needing a row per year.
+    """
+    __tablename__ = "holidays"
+    __table_args__ = (
+        UniqueConstraint("holiday_date", name="uq_holiday_date"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    holiday_date = Column(Date, nullable=False, index=True)
+    name = Column(String(150), nullable=False)
+    # PUBLIC (everyone off), OPTIONAL (taken at will), COMPANY (this business).
+    holiday_type = Column(String(20), nullable=False, default="PUBLIC", index=True)
+    # Same month and day every year — New Year, Independence Day.
+    is_recurring = Column(Boolean, nullable=False, default=False)
+    description = Column(String(500), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

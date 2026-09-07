@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import Footer from './components/Footer';
+import Notepad from './components/Notepad';
 import Overview from './pages/Overview';
 import Configuration from './pages/Configuration';
 import AuthUsers from './pages/AuthUsers';
@@ -18,6 +19,7 @@ import StockIn from './pages/inventory/StockIn';
 import StockOut from './pages/inventory/StockOut';
 import StockTransfer from './pages/inventory/StockTransfer';
 import StockAdjustment from './pages/inventory/StockAdjustment';
+import HolidayCalendar from './pages/utilities/HolidayCalendar';
 import PointOfSale from './pages/sales/PointOfSale';
 import SalesOrder from './pages/sales/SalesOrder';
 import Delivery from './pages/sales/Delivery';
@@ -99,6 +101,7 @@ function App() {
   // Until the server has answered, a toggle would race the load and could
   // save a value the user never chose.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [notepadOpen, setNotepadOpen] = useState(false);
   const location = useLocation();
 
   // Pull the authoritative preferences once signed in.
@@ -129,6 +132,24 @@ function App() {
     cachePref('sidebarOpen', next);
     preferencesApi.save({ sidebarOpen: String(next) }).catch(() => {});
   };
+
+  // Ctrl+N opens the notepad, with Alt+N alongside it: Chrome reserves Ctrl+N
+  // for a new window and will not let a page cancel it, so on that browser the
+  // notepad opens but a window opens too. Alt+N is not reserved anywhere and is
+  // the one that behaves. Escape closes.
+  useEffect(() => {
+    const onKey = (e) => {
+      const key = (e.key || '').toLowerCase();
+      if (key === 'n' && (e.ctrlKey || e.altKey) && !e.shiftKey && !e.metaKey) {
+        e.preventDefault();
+        setNotepadOpen(true);
+        return;
+      }
+      if (key === 'escape') setNotepadOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Picking a menu item on a narrow screen should get the sidebar out of the way.
   useEffect(() => {
@@ -195,6 +216,7 @@ function App() {
               <Route path="/master/customers" element={<RequireModule module="MASTER_DATA"><Customers /></RequireModule>} />
               <Route path="/master/suppliers" element={<RequireModule module="MASTER_DATA"><Suppliers /></RequireModule>} />
               <Route path="/master/tax" element={<RequireModule module="MASTER_DATA"><Tax /></RequireModule>} />
+              <Route path="/master/holidays" element={<RequireModule module="MASTER_DATA"><HolidayCalendar /></RequireModule>} />
               <Route path="/master/warehouses" element={<RequireModule module="MASTER_DATA"><Warehouses /></RequireModule>} />
               <Route path="/inventory/opening" element={<RequireModule module="INVENTORY"><OpeningStock /></RequireModule>} />
               <Route path="/inventory/in" element={<RequireModule module="INVENTORY"><StockIn /></RequireModule>} />
@@ -258,6 +280,7 @@ function App() {
           </div>
           <Footer />
         </main>
+        <Notepad open={notepadOpen} onClose={() => setNotepadOpen(false)} />
       </div>
     </CurrencyProvider>
     </PermissionProvider>

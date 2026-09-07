@@ -8,7 +8,7 @@ from database import engine
 from routers import (users, accounts, products, orders, categories, units,
                      customers, suppliers, taxes, opening_stock, stock_movements,
                      sales_documents, purchase_documents, trades, accounting, reports, warehouses, roles,
-                     pos, settings, api_keys, notifications)
+                     pos, settings, api_keys, notifications, notes, holidays)
 from app.trading import router as trading_router
 from deps import get_current_user, require_module
 import modules as M
@@ -59,6 +59,11 @@ app.include_router(roles.router)
 app.include_router(settings.router)
 # Alerts are computed from whatever the caller may already see.
 app.include_router(notifications.router)
+# Notes belong to the person, not to a module — every endpoint is scoped to the
+# caller, so there is nothing here for a permission to gate.
+app.include_router(notes.router)
+# The holiday calendar is a master list, and sits behind the same permission.
+app.include_router(holidays.router, dependencies=guard(M.MASTER_DATA))
 app.include_router(api_keys.router, dependencies=guard(M.SETTINGS))
 app.include_router(accounts.router, dependencies=guard(M.ACCOUNTS))
 app.include_router(products.router, dependencies=guard(M.MASTER_DATA))

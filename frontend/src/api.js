@@ -344,3 +344,29 @@ export const apiKeysApi = {
 export const notificationsApi = {
     feed: () => request('/notifications/')
 };
+
+// --- Utilities: personal notes and the holiday calendar ---------------------
+export const notesApi = {
+    // Every call is scoped to the signed-in user by the server.
+    list: () => request('/notes/'),
+    create: (payload) => request('/notes/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/notes/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/notes/${id}`, { method: 'DELETE' })
+};
+
+export const holidaysApi = {
+    list: (params = '') => request(`/holidays/${params}`),
+    calendar: (year, month) => request(
+        `/holidays/calendar?year=${year}${month ? `&month=${month}` : ''}`),
+    create: (payload) => request('/holidays/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/holidays/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/holidays/${id}`, { method: 'DELETE' })
+};

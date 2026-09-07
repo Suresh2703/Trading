@@ -1,0 +1,233 @@
+.hc-period {
+  min-width: 150px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.hc-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
+.hc-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .hc-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.hc-calendar {
+  padding: 1rem;
+}
+
+.hc-weekdays,
+.hc-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.hc-weekdays {
+  margin-bottom: 0.5rem;
+}
+
+.hc-weekdays div {
+  padding: 0.3rem 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.hc-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 74px;
+  padding: 0.4rem;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.hc-day:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+}
+
+.hc-day.blank {
+  background: transparent;
+  border: none;
+  cursor: default;
+  min-height: 0;
+}
+
+.hc-day.readonly {
+  cursor: default;
+}
+
+.hc-day.weekend {
+  background: rgba(148, 163, 184, 0.07);
+}
+
+.hc-day.today {
+  box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+/* Each holiday type reads at a glance, without needing the legend. */
+.hc-day.holiday.public {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.hc-day.holiday.optional {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.hc-day.holiday.company {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.hc-daynum {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.hc-dayname {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--text-main);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.hc-loading {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* --- month summary --------------------------------------------------------- */
+
+.hc-side {
+  padding: 1rem;
+}
+
+.hc-side h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.hc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.hc-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--border-color);
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.hc-list li.public { border-left-color: var(--danger); }
+.hc-list li.optional { border-left-color: #f59e0b; }
+.hc-list li.company { border-left-color: var(--accent-secondary); }
+
+.hc-list-date {
+  flex: 0 0 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hc-list-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hc-list-body strong {
+  font-size: 0.8rem;
+}
+
+.hc-list-body em {
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* --- dialog ---------------------------------------------------------------- */
+
+.hc-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.hc-dialog-head h3 {
+  margin: 0;
+}
+
+.hc-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.hc-check span {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.hc-check em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.hc-remove {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  /* Pushed away from Cancel/Save so it is not hit by accident. */
+  margin-right: auto;
+}
