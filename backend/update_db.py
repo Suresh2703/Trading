@@ -2,12 +2,58 @@
 
 Safe to re-run: columns are added only when information_schema says they are
 missing, and seed rows are inserted only when absent.
+
+Running this against an empty MySQL server is enough to stand the application
+up from nothing: the schema itself, every table, and the seed data.
 """
-from sqlalchemy import text
+from urllib.parse import quote_plus
+
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+import config
 import models
-from database import engine, MYSQL_DB
+
+
+def ensure_database():
+    """Create the schema itself if the server does not have it yet.
+
+    Every other connection in the app is opened against MYSQL_DB, so on a fresh
+    server they all fail with "Unknown database" before anything has a chance to
+    create it. Connecting to the server without naming a schema is the only way
+    to break that circle.
+    """
+    server = create_engine(
+        f"mysql+pymysql://{quote_plus(config.MYSQL_USER)}:"
+        f"{quote_plus(config.MYSQL_PASSWORD)}@{config.MYSQL_HOST}/"
+    )
+    try:
+        with server.connect() as conn:
+            exists = conn.execute(
+                text("SELECT COUNT(*) FROM information_schema.SCHEMATA "
+                     "WHERE SCHEMA_NAME = :db"),
+                {"db": config.MYSQL_DB},
+            ).scalar()
+
+            if exists:
+                print(f"Schema '{config.MYSQL_DB}' already exists.")
+            else:
+                # Back-quoted rather than bound: an identifier cannot be a
+                # parameter. MYSQL_DB comes from our own environment, not a user.
+                conn.execute(text(
+                    f"CREATE DATABASE `{config.MYSQL_DB}` "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
+                conn.commit()
+                print(f"Created schema '{config.MYSQL_DB}'.")
+    finally:
+        server.dispose()
+
+
+ensure_database()
+
+# Imported only once the schema is known to exist, because importing binds an
+# engine to it.
+from database import engine, MYSQL_DB  # noqa: E402
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
