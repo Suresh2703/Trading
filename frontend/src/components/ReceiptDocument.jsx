@@ -143,7 +143,7 @@ export default function ReceiptDocument({ sale, symbol = '', duplicate = false,
           {!sale.journal_entry_id && sale.status !== 'VOID' && (
             <div>Charged to account — payment outstanding</div>
           )}
-          <div className="rcpt-thanks">Thank you for your custom</div>
+          <div className="rcpt-thanks">Thank you and Welcome Again!</div>
         </footer>
       </div>
     </div>,
