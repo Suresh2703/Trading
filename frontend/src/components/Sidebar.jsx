@@ -4,6 +4,7 @@ import {
   Home, Users, Database, Package, ShoppingCart, 
   ShoppingBag, TrendingUp, BookOpen, FileText, ChevronDown, ChevronRight, Settings 
 } from 'lucide-react';
+import Logo from './Logo';
 import './Sidebar.css';
 import { usePermissions } from '../context/PermissionContext';
 
@@ -164,8 +165,11 @@ export default function Sidebar({ collapsed = false }) {
   return (
     <aside className={collapsed ? 'sidebar glass-panel is-rail' : 'sidebar glass-panel'}>
       <div className="logo-container">
-        {/* Collapsed there is no room for the wordmark, so it becomes a mark. */}
-        <h2 className="text-gradient">{collapsed ? 'ERP' : 'ERP Trading'}</h2>
+        {/* Collapsed there is no room for the wordmark, so the mark stands
+            alone — which is what a mark is for. */}
+        <Logo size={collapsed ? 30 : 34}
+              wordmark={collapsed ? null : 'ERP Trading'}
+              className={collapsed ? 'is-rail' : ''} />
       </div>
 
       <nav className="nav-links">
