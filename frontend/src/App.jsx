@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import Footer from './components/Footer';
 import Notepad from './components/Notepad';
+import HolidayPopup from './components/HolidayPopup';
 import Overview from './pages/Overview';
 import Configuration from './pages/Configuration';
 import AuthUsers from './pages/AuthUsers';
@@ -102,6 +103,7 @@ function App() {
   // save a value the user never chose.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [notepadOpen, setNotepadOpen] = useState(false);
+  const [holidayOpen, setHolidayOpen] = useState(false);
   const location = useLocation();
 
   // Pull the authoritative preferences once signed in.
@@ -133,19 +135,33 @@ function App() {
     preferencesApi.save({ sidebarOpen: String(next) }).catch(() => {});
   };
 
-  // Ctrl+N opens the notepad, with Alt+N alongside it: Chrome reserves Ctrl+N
-  // for a new window and will not let a page cancel it, so on that browser the
-  // notepad opens but a window opens too. Alt+N is not reserved anywhere and is
-  // the one that behaves. Escape closes.
+  // Alt+N opens the notepad and Alt+L the holiday calendar. Ctrl+N is bound as
+  // well because it was asked for, but Chrome reserves it for a new window and
+  // will not let a page cancel it, so there it opens the notepad and a browser
+  // window both; Alt is the modifier no browser claims.
+  //
+  // Each popup closes itself on Escape, so this only opens them.
   useEffect(() => {
     const onKey = (e) => {
+      if (e.shiftKey || e.metaKey) return;
+      if (!e.altKey && !e.ctrlKey) return;
+
       const key = (e.key || '').toLowerCase();
-      if (key === 'n' && (e.ctrlKey || e.altKey) && !e.shiftKey && !e.metaKey) {
+      // With Alt held, some layouts report the composed character rather than
+      // the letter, so the physical key is the reliable one.
+      const code = e.code === 'KeyN' ? 'n' : e.code === 'KeyL' ? 'l' : null;
+      const pressed = ['n', 'l'].includes(key) ? key : code;
+
+      if (pressed === 'n') {
         e.preventDefault();
+        setHolidayOpen(false);
         setNotepadOpen(true);
-        return;
+      } else if (pressed === 'l' && e.altKey) {
+        // Ctrl+L is the browser's address bar; only Alt opens the calendar.
+        e.preventDefault();
+        setNotepadOpen(false);
+        setHolidayOpen(true);
       }
-      if (key === 'escape') setNotepadOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -281,6 +297,7 @@ function App() {
           <Footer />
         </main>
         <Notepad open={notepadOpen} onClose={() => setNotepadOpen(false)} />
+        <HolidayPopup open={holidayOpen} onClose={() => setHolidayOpen(false)} />
       </div>
     </CurrencyProvider>
     </PermissionProvider>

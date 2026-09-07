@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  StickyNote, Plus, Trash2, Pin, PinOff, X, Check, AlertTriangle, Loader2
+  StickyNote, Plus, Trash2, Pin, PinOff, Check, AlertTriangle, Loader2
 } from 'lucide-react';
 
 import { notesApi } from '../api';
+import UtilityPopup from './UtilityPopup';
 import './Notepad.css';
 
 const AUTOSAVE_MS = 900;
@@ -142,22 +143,15 @@ export default function Notepad({ open, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="notepad-backdrop" onClick={onClose}>
-      <div className="notepad glass-panel" onClick={(e) => e.stopPropagation()}
-           role="dialog" aria-label="Notes">
-        <header className="notepad-head">
-          <h2><StickyNote size={17} /> Notes</h2>
-          <div className="notepad-head-right">
-            <span className="notepad-status">
-              {status === 'saving' && <><Loader2 size={13} className="np-spin" /> Saving</>}
-              {status === 'saved' && <><Check size={13} /> Saved</>}
-            </span>
-            <button className="icon-btn" onClick={onClose} aria-label="Close notes">
-              <X size={18} />
-            </button>
-          </div>
-        </header>
-
+    <UtilityPopup open={open} title="Notes" icon={StickyNote} shortcut="Alt+N"
+                  onClose={onClose}
+                  headerExtra={(
+                    <span className="notepad-status">
+                      {status === 'saving' && <><Loader2 size={13} className="np-spin" /> Saving</>}
+                      {status === 'saved' && <><Check size={13} /> Saved</>}
+                    </span>
+                  )}>
+      <div className="notepad-inner">
         {error && <div className="notepad-error"><AlertTriangle size={14} /> {error}</div>}
 
         <div className="notepad-body">
@@ -224,6 +218,6 @@ export default function Notepad({ open, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </UtilityPopup>
   );
 }

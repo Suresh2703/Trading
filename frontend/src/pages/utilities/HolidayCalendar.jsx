@@ -22,7 +22,7 @@ const TYPES = [
 
 const iso = (d) => d.toISOString().slice(0, 10);
 
-export default function HolidayCalendar() {
+export default function HolidayCalendar({ embedded = false }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -87,15 +87,20 @@ export default function HolidayCalendar() {
   const marked = days.filter((d) => d.holiday);
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div style={{ paddingBottom: embedded ? 0 : '2rem' }}
+         className={embedded ? 'hc-embedded' : undefined}>
       <div className="products-header">
-        <div className="page-title">
-          <h1>Holiday Calendar</h1>
-          <p>
-            Mark the days the business does not work.
-            {mayEdit ? ' Click any day to mark or edit it.' : ' Read-only for your role.'}
-          </p>
-        </div>
+        {/* In a dialog the frame already says what this is, so repeating the
+            title here would just push the calendar down the screen. */}
+        {!embedded && (
+          <div className="page-title">
+            <h1>Holiday Calendar</h1>
+            <p>
+              Mark the days the business does not work.
+              {mayEdit ? ' Click any day to mark or edit it.' : ' Read-only for your role.'}
+            </p>
+          </div>
+        )}
         <div className="report-controls">
           <button className="btn-ghost" onClick={() => step(-1)} aria-label="Previous month">
             <ChevronLeft size={16} />

@@ -231,3 +231,20 @@
   /* Pushed away from Cancel/Save so it is not hit by accident. */
   margin-right: auto;
 }
+
+.hc-noaccess {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.hc-noaccess p {
+  max-width: 42ch;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
