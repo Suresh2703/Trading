@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Bell, Settings, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { notificationsApi } from '../api';
 import { usePermissions } from '../context/PermissionContext';
 import './TopBar.css';
@@ -101,9 +101,14 @@ export default function TopBar({ onLogout, sidebarOpen, onToggleSidebar }) {
             everyone sent most roles to a "No access" panel, which reads as a
             broken button rather than a permission. */}
         {canView('SETTINGS') && (
-          <button className="icon-btn" title="Settings" onClick={() => navigate('/settings')}>
+          /* A real link rather than a button calling navigate(): it works
+             without JavaScript having wired up, supports middle-click and
+             open-in-new-tab, and shows its destination on hover — none of
+             which a click handler gives. Every other navigation in the app is
+             already a link. */
+          <Link to="/settings" className="icon-btn" title="Settings" aria-label="Settings">
             <Settings size={20} />
-          </button>
+          </Link>
         )}
         
         <div className="user-profile">
