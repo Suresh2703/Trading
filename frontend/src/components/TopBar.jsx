@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Bell, Settings, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { notificationsApi } from '../api';
+import { usePermissions } from '../context/PermissionContext';
 import './TopBar.css';
 
 export default function TopBar({ onLogout, sidebarOpen, onToggleSidebar }) {
@@ -9,6 +10,7 @@ export default function TopBar({ onLogout, sidebarOpen, onToggleSidebar }) {
   const user = JSON.parse(localStorage.getItem('user')) || { username: 'Admin', role: 'Super Admin' };
 
   const navigate = useNavigate();
+  const { canView } = usePermissions();
   const [feed, setFeed] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
 
@@ -94,9 +96,15 @@ export default function TopBar({ onLogout, sidebarOpen, onToggleSidebar }) {
           )}
         </div>
 
-        <button className="icon-btn" title="Settings" onClick={() => navigate('/settings')}>
-          <Settings size={20} />
-        </button>
+        {/* Only shown to roles that can actually open it. The sidebar already
+            hides its Settings link the same way; leaving the gear visible to
+            everyone sent most roles to a "No access" panel, which reads as a
+            broken button rather than a permission. */}
+        {canView('SETTINGS') && (
+          <button className="icon-btn" title="Settings" onClick={() => navigate('/settings')}>
+            <Settings size={20} />
+          </button>
+        )}
         
         <div className="user-profile">
           <div className="avatar">{user.username.charAt(0).toUpperCase()}</div>
