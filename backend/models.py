@@ -537,6 +537,20 @@ class PosSale(Base):
     amount_tendered = Column(Float, nullable=False, default=0.0)
     change_given = Column(Float, nullable=False, default=0.0)
 
+    # How a card or UPI payment can be traced back to a statement, without ever
+    # holding anything that could be used to charge the card again. Four digits
+    # and an issuer are enough to reconcile; the column is deliberately four
+    # characters wide so a full card number cannot fit in it even by mistake.
+    payment_bank = Column(String(100), nullable=True)
+    payment_last4 = Column(String(4), nullable=True)
+    payment_reference = Column(String(60), nullable=True)
+
+    # Who the sale is billed to, captured when it goes on account. Snapshotted
+    # rather than read back from the customer, so editing an address later
+    # cannot rewrite what an already-printed receipt said.
+    bill_to_name = Column(String(255), nullable=True)
+    bill_to_address = Column(String(500), nullable=True)
+
     cashier_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     status = Column(String(20), nullable=False, default="COMPLETED", index=True)
     notes = Column(String(500), nullable=True)

@@ -152,6 +152,22 @@ with engine.begin() as conn:
         result = conn.execute(text("UPDATE users SET role = 'ADMIN'"))
         print(f"  ~ existing {result.rowcount} account(s) marked ADMIN")
 
+print("Adding POS payment traceability columns...")
+with engine.begin() as conn:
+    if conn.execute(text(
+            "SELECT COUNT(*) FROM information_schema.TABLES "
+            "WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'pos_sales'"),
+            {"db": MYSQL_DB}).scalar():
+        add_column(conn, "pos_sales", "payment_bank", "VARCHAR(100) NULL")
+        # Four characters wide on purpose: a full card number cannot be stored
+        # here even if something upstream tried to.
+        add_column(conn, "pos_sales", "payment_last4", "VARCHAR(4) NULL")
+        add_column(conn, "pos_sales", "payment_reference", "VARCHAR(60) NULL")
+        add_column(conn, "pos_sales", "bill_to_name", "VARCHAR(255) NULL")
+        add_column(conn, "pos_sales", "bill_to_address", "VARCHAR(500) NULL")
+    else:
+        print("  - pos_sales not created yet, skipping")
+
 db = SessionLocal()
 
 def seed(model, rows, key):

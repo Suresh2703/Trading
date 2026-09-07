@@ -32,6 +32,12 @@ export default function PointOfSale() {
   const [taxId, setTaxId] = useState('');
   const [method, setMethod] = useState('CASH');
   const [tendered, setTendered] = useState('');
+  // Card / UPI traceability, and who a credit sale is billed to.
+  const [bank, setBank] = useState('');
+  const [last4, setLast4] = useState('');
+  const [payRef, setPayRef] = useState('');
+  const [billName, setBillName] = useState('');
+  const [billAddress, setBillAddress] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -113,7 +119,14 @@ export default function PointOfSale() {
   const removeLine = (productId) =>
     setCart((lines) => lines.filter((l) => l.product_id !== productId));
 
-  const clearCart = () => { setCart([]); setTendered(''); setError(null); };
+  const clearCart = () => {
+    setCart([]);
+    setTendered('');
+    // Payment details belong to the sale just closed, never to the next one.
+    setBank(''); setLast4(''); setPayRef('');
+    setBillName(''); setBillAddress('');
+    setError(null);
+  };
 
   // Totals mirror the server's arithmetic so the drawer figure matches the
   // invoice; the server stays the authority and recomputes on post.
@@ -131,12 +144,33 @@ export default function PointOfSale() {
 
   const activeMethod = terminal?.payment_methods.find((m) => m.code === method);
   const takesTender = Boolean(activeMethod?.takes_tender);
+  const needsInstrument = Boolean(activeMethod?.needs_instrument);
+  const needsBillTo = Boolean(activeMethod?.needs_bill_to);
   const tenderedValue = Number(tendered || 0);
   const change = takesTender ? round2(tenderedValue - totals.grand) : 0;
   const shortBy = takesTender ? round2(totals.grand - tenderedValue) : 0;
 
+  // The same conditions the server enforces, so the button never offers a sale
+  // that is about to be refused.
+  const instrumentReady = !needsInstrument || (bank.trim() && /^\d{4}$/.test(last4));
+  const billToReady = !needsBillTo || (billName.trim() && billAddress.trim());
+
   const canPay = cart.length > 0 && !isPosting
-    && (!takesTender || tenderedValue >= totals.grand - 0.005);
+    && (!takesTender || tenderedValue >= totals.grand - 0.005)
+    && instrumentReady && billToReady;
+
+  // Switching method starts its details clean; a card's last four must never
+  // linger onto the next sale.
+  const chooseMethod = (code) => {
+    setMethod(code);
+    setTendered('');
+    setBank(''); setLast4(''); setPayRef('');
+    const chosen = terminal?.customers.find((c) => String(c.id) === String(customerId));
+    // A named account already has these on file — prefill rather than retype.
+    setBillName(chosen && chosen.code !== 'WALKIN' ? chosen.name || '' : '');
+    setBillAddress(chosen && chosen.code !== 'WALKIN'
+      ? [chosen.address, chosen.city, chosen.state].filter(Boolean).join(', ') : '');
+  };
 
   // --- checkout ------------------------------------------------------------
   const pay = async () => {
@@ -149,6 +183,11 @@ export default function PointOfSale() {
         warehouse_id: warehouseId ? Number(warehouseId) : null,
         payment_method: method,
         amount_tendered: takesTender ? tenderedValue : 0,
+        payment_bank: needsInstrument ? bank.trim() : null,
+        payment_last4: needsInstrument ? last4.trim() : null,
+        payment_reference: payRef.trim() || null,
+        bill_to_name: billName.trim() || null,
+        bill_to_address: billAddress.trim() || null,
         lines: cart.map((l) => ({
           product_id: l.product_id,
           quantity: Number(l.quantity),
@@ -380,7 +419,7 @@ export default function PointOfSale() {
                 return (
                   <button key={m.code}
                           className={m.code === method ? 'pos-method active' : 'pos-method'}
-                          onClick={() => { setMethod(m.code); setTendered(''); }}
+                          onClick={() => chooseMethod(m.code)}
                           title={m.account_name || 'Left on the customer account'}>
                     <Icon size={15} /> {m.label}
                   </button>
@@ -412,10 +451,55 @@ export default function PointOfSale() {
               </div>
             )}
 
-            {method === 'CREDIT' && (
-              <div className="pos-note">
-                Nothing is collected now — this stays on the customer&apos;s account
-                and shows in Outstanding.
+            {needsInstrument && (
+              <div className="pos-instrument">
+                <div className="pos-foot-row">
+                  <label>{method === 'UPI' ? 'Provider' : 'Bank'}</label>
+                  <input className="config-input" value={bank}
+                         placeholder={method === 'UPI' ? 'e.g. Paytm, GPay' : 'Issuing bank'}
+                         onChange={(e) => setBank(e.target.value)} />
+                </div>
+                <div className="pos-foot-row">
+                  <label>Last 4</label>
+                  <input className="config-input pos-last4"
+                         inputMode="numeric" maxLength={4} value={last4}
+                         placeholder="1234"
+                         /* Keeps four digits and no more, so a full number can
+                            never reach the server. Taking them from the end
+                            matters: pasting a whole card and keeping the first
+                            four would quietly record the issuer prefix instead
+                            of the last four this field asks for. */
+                         onChange={(e) => setLast4(
+                           e.target.value.replace(/\D/g, '').slice(-4))} />
+                  <span className="pos-hint">of the card / account</span>
+                </div>
+                <div className="pos-foot-row">
+                  <label>Ref</label>
+                  <input className="config-input" value={payRef}
+                         placeholder="Approval or txn ref (optional)"
+                         onChange={(e) => setPayRef(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            {needsBillTo && (
+              <div className="pos-instrument">
+                <div className="pos-note" style={{ marginBottom: '0.6rem' }}>
+                  Nothing is collected now — this stays on the account and shows
+                  in Outstanding, so the receipt must say who owes it.
+                </div>
+                <div className="pos-foot-row">
+                  <label>Bill to</label>
+                  <input className="config-input" value={billName}
+                         placeholder="Customer name"
+                         onChange={(e) => setBillName(e.target.value)} />
+                </div>
+                <div className="pos-foot-row">
+                  <label>Address</label>
+                  <textarea className="config-input pos-address" rows={2} value={billAddress}
+                            placeholder="Billing address"
+                            onChange={(e) => setBillAddress(e.target.value)} />
+                </div>
               </div>
             )}
 

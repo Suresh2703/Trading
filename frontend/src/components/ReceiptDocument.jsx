@@ -107,6 +107,15 @@ export default function ReceiptDocument({ sale, symbol = '', duplicate = false,
           <div><span>Tax</span><span>{money(invoice?.tax_total)}</span></div>
           <div className="grand"><span>TOTAL</span><span>{money(sale.amount_total)}</span></div>
           <div><span>Paid by</span><span>{sale.payment_method}</span></div>
+          {sale.payment_bank && (
+            <div><span>Bank</span><span>{sale.payment_bank}</span></div>
+          )}
+          {sale.payment_last4 && (
+            <div><span>Account</span><span>**** **** **** {sale.payment_last4}</span></div>
+          )}
+          {sale.payment_reference && (
+            <div><span>Ref</span><span>{sale.payment_reference}</span></div>
+          )}
           {sale.amount_tendered > 0 && (
             <div><span>Tendered</span><span>{money(sale.amount_tendered)}</span></div>
           )}
@@ -114,6 +123,18 @@ export default function ReceiptDocument({ sale, symbol = '', duplicate = false,
             <div><span>Change</span><span>{money(sale.change_given)}</span></div>
           )}
         </div>
+
+        {/* Nothing was collected, so the receipt has to say who owes it. */}
+        {sale.payment_method === 'CREDIT' && sale.bill_to_name && (
+          <>
+            <div className="rcpt-rule" />
+            <div className="rcpt-billto">
+              <div className="rcpt-billto-head">BILL TO</div>
+              <div>{sale.bill_to_name}</div>
+              {sale.bill_to_address && <div>{sale.bill_to_address}</div>}
+            </div>
+          </>
+        )}
 
         <div className="rcpt-rule" />
 

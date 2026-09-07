@@ -1023,6 +1023,17 @@ class PosSaleCreate(BaseModel):
     payment_method: str = "CASH"
     amount_tendered: float = 0.0
     notes: Optional[str] = None
+
+    # Card / UPI: the issuer and the last four digits, which is all that may be
+    # kept and all that reconciliation needs.
+    payment_bank: Optional[str] = None
+    payment_last4: Optional[str] = None
+    payment_reference: Optional[str] = None
+
+    # On account: who owes the money.
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
+
     lines: List[PosLineCreate] = []
 
 
@@ -1039,6 +1050,11 @@ class PosSale(BaseModel):
     amount_total: float
     amount_tendered: float
     change_given: float
+    payment_bank: Optional[str] = None
+    payment_last4: Optional[str] = None
+    payment_reference: Optional[str] = None
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
     cashier_id: Optional[int] = None
     status: str
     notes: Optional[str] = None
@@ -1084,6 +1100,10 @@ class PosPaymentMethod(BaseModel):
     account_id: Optional[int] = None
     account_name: Optional[str] = None
     takes_tender: bool = False
+    # What the till must collect before this method can be taken, so the screen
+    # asks for exactly what the server will insist on.
+    needs_instrument: bool = False
+    needs_bill_to: bool = False
 
 
 class PosTerminal(BaseModel):

@@ -34,11 +34,19 @@ RECEIVABLE_ACCOUNT = "1100"    # Accounts Receivable
 
 # A till takes money in a few shapes. CREDIT is the odd one out: nothing is
 # collected, so it posts no receipt and the balance stays with the customer.
+#
+# `needs_instrument` means the payment arrived through a bank and has to be
+# traceable to a statement line; `needs_bill_to` means nothing was collected,
+# so the receipt has to say who owes it.
 PAYMENT_METHODS = {
-    "CASH": {"label": "Cash", "account": CASH_ACCOUNT, "takes_tender": True},
-    "CARD": {"label": "Card", "account": BANK_ACCOUNT, "takes_tender": False},
-    "UPI": {"label": "UPI / Wallet", "account": BANK_ACCOUNT, "takes_tender": False},
-    "CREDIT": {"label": "On account", "account": None, "takes_tender": False},
+    "CASH": {"label": "Cash", "account": CASH_ACCOUNT, "takes_tender": True,
+             "needs_instrument": False, "needs_bill_to": False},
+    "CARD": {"label": "Card", "account": BANK_ACCOUNT, "takes_tender": False,
+             "needs_instrument": True, "needs_bill_to": False},
+    "UPI": {"label": "UPI / Wallet", "account": BANK_ACCOUNT, "takes_tender": False,
+            "needs_instrument": True, "needs_bill_to": False},
+    "CREDIT": {"label": "On account", "account": None, "takes_tender": False,
+               "needs_instrument": False, "needs_bill_to": True},
 }
 
 COMPLETED = "COMPLETED"
@@ -87,6 +95,76 @@ def resolve_method(method: str) -> dict:
     return dict(code=key, **PAYMENT_METHODS[key])
 
 
+def clean_last4(raw: str) -> str:
+    """The last four digits of the card or account, and nothing more.
+
+    Anything longer is refused rather than trimmed. Silently keeping the tail
+    of a full card number would mean the number itself had been accepted,
+    transmitted and logged on its way here — the point is that it never is.
+    """
+    value = (raw or "").strip()
+    if not value:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter the last 4 digits of the card or account number")
+    if not value.isdigit() or len(value) != 4:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter exactly 4 digits — the last 4 of the card or account "
+                   "number, never the full number")
+    return value
+
+
+def payment_details(method: dict, payload: schemas.PosSaleCreate) -> dict:
+    """The traceability a bank-routed payment must carry."""
+    if not method["needs_instrument"]:
+        return {"payment_bank": None, "payment_last4": None,
+                "payment_reference": (payload.payment_reference or "").strip() or None}
+
+    bank = (payload.payment_bank or "").strip()
+    if not bank:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{method['label']} payments need the bank or provider name")
+
+    return {
+        "payment_bank": bank[:100],
+        "payment_last4": clean_last4(payload.payment_last4),
+        "payment_reference": (payload.payment_reference or "").strip()[:60] or None,
+    }
+
+
+def bill_to(method: dict, payload: schemas.PosSaleCreate, customer) -> dict:
+    """Who owes the money, for a sale that collected none.
+
+    Typed values win over the customer record so a one-off delivery address can
+    be taken at the counter, but something has to be there: an unpaid sale with
+    nobody named on it is a debt that cannot be chased.
+    """
+    name = (payload.bill_to_name or "").strip() or (customer.name or "").strip()
+    address = (payload.bill_to_address or "").strip()
+    if not address and customer is not None:
+        address = ", ".join(
+            part for part in (customer.address, customer.city, customer.state)
+            if (part or "").strip()
+        )
+
+    if not method["needs_bill_to"]:
+        return {"bill_to_name": name or None, "bill_to_address": address or None}
+
+    if not name:
+        raise HTTPException(
+            status_code=400,
+            detail="A sale on account needs the customer's name")
+    if not address:
+        raise HTTPException(
+            status_code=400,
+            detail="A sale on account needs the customer's address — either "
+                   "type one, or pick a customer that has one on file")
+
+    return {"bill_to_name": name[:255], "bill_to_address": address[:500]}
+
+
 def as_schema(db: Session, sale) -> schemas.PosSale:
     """Attach the cashier's name, which is not a column on the sale."""
     payload = schemas.PosSale.model_validate(sale)
@@ -111,6 +189,8 @@ def terminal(db: Session = Depends(get_db)):
             account_id=account.id if account else None,
             account_name=account.name if account else None,
             takes_tender=cfg["takes_tender"],
+            needs_instrument=cfg["needs_instrument"],
+            needs_bill_to=cfg["needs_bill_to"],
         ))
 
     return schemas.PosTerminal(
@@ -195,6 +275,11 @@ def checkout(payload: schemas.PosSaleCreate,
         raise HTTPException(
             status_code=400, detail="No warehouse to sell from — set one up first.")
 
+    # Settled before anything is written: a sale that cannot be traced or
+    # billed should fail while it is still only a cart.
+    instrument = payment_details(method, payload)
+    billing = bill_to(method, payload, customer)
+
     lines = cart_lines(payload)
     today = datetime.date.today()
 
@@ -268,10 +353,17 @@ def checkout(payload: schemas.PosSaleCreate,
                 party_id=customer.id,
                 status="POSTED",
             )
+            # Carrying the instrument into the ledger line is what lets a bank
+            # statement be reconciled against the books without opening the till.
+            taken = "{} taken at till".format(method["label"])
+            if instrument["payment_last4"]:
+                taken += " ({} ****{})".format(
+                    instrument["payment_bank"], instrument["payment_last4"])
+
             # Money in, receivable cleared — the sale never rests as debt.
             entry.lines.append(models.JournalLine(
                 account_id=landing.id, debit=total, credit=0.0,
-                line_narration="{} taken at till".format(method["label"])))
+                line_narration=taken[:255]))
             entry.lines.append(models.JournalLine(
                 account_id=receivable.id, debit=0.0, credit=total,
                 line_narration="Settles {}".format(invoice.doc_no)))
@@ -293,6 +385,8 @@ def checkout(payload: schemas.PosSaleCreate,
             cashier_id=current_user.id,
             status=COMPLETED,
             notes=payload.notes,
+            **instrument,
+            **billing,
         )
         db.add(sale)
         db.commit()
