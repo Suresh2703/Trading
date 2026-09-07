@@ -228,7 +228,9 @@
 .app-logo img {
   flex-shrink: 0;
   display: block;
-  border-radius: 9px;
+  /* The mark carries its own silhouette and transparent corners, so it is not
+     cropped or boxed here. */
+  object-fit: contain;
 }
 
 .app-logo-word {
