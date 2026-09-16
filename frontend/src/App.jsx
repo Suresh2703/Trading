@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import Footer from './components/Footer';
@@ -56,16 +56,47 @@ import LedgerReport from './pages/reports/LedgerReport';
 import GstReport from './pages/reports/GstReport';
 import Financials from './pages/reports/Financials';
 import Login from './pages/Login';
+import MobileApp from './mobile/MobileApp';
 
 import { CurrencyProvider } from './context/CurrencyContext';
 import { PermissionProvider } from './context/PermissionContext';
 import RequireModule from './components/RequireModule';
 import RolesPermissions from './pages/RolesPermissions';
 import { preferencesApi } from './api';
+import { purgeCachedData } from './utils/pwa';
 
 // Below this the sidebar overlays the content instead of sitting beside it,
 // so it starts closed and closes again on navigation.
 const OVERLAY_BREAKPOINT = 900;
+
+/**
+ * Is this one of the mobile app's URLs?
+ *
+ * Matched as a whole segment rather than as a prefix: `/master/products` also
+ * begins with `/m`, and must not be mistaken for the phone app.
+ */
+function isMobilePath(pathname) {
+  return pathname === '/m' || pathname.startsWith('/m/');
+}
+
+/**
+ * Should a plain visit to `/` open the phone app instead of the desktop shell?
+ *
+ * True when the app was launched from the home screen, and on a small touch
+ * screen where the sidebar layout has nowhere to go. Asking for the desktop
+ * view from inside the mobile app sets a flag that holds for the session, so
+ * that link cannot bounce straight back here.
+ */
+function prefersMobile() {
+  try {
+    if (sessionStorage.getItem('erp:prefer-desktop') === '1') return false;
+  } catch {
+    // Private browsing can refuse session storage; fall through to the checks.
+  }
+  if (window.matchMedia('(display-mode: standalone)').matches) return true;
+  if (window.navigator.standalone === true) return true;
+  return window.matchMedia('(pointer: coarse)').matches && window.innerWidth <= 640;
+}
 
 // The signed-in user's id, used only to key the local cache below.
 function currentUserId() {
@@ -197,6 +228,10 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // The installed app caches API answers for offline reading, so signing out
+    // has to clear them too — otherwise the next person to open it on this
+    // phone could still read the last user's figures.
+    purgeCachedData();
     setIsAuthenticated(false);
     // The next person to sign in must load their own settings, not inherit
     // whatever is still in state from this session.
@@ -205,6 +240,24 @@ function App() {
 
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
+  }
+
+  // Opening the app on a phone, or from the home screen, lands on the mobile
+  // app rather than a sidebar layout with nowhere to put the sidebar.
+  if (location.pathname === '/' && prefersMobile()) {
+    return <Navigate to="/m" replace />;
+  }
+
+  // The mobile app brings its own shell — no sidebar, top bar or footer — so
+  // it is returned instead of the desktop layout rather than inside it.
+  if (isMobilePath(location.pathname)) {
+    return (
+      <PermissionProvider enabled={isAuthenticated}>
+        <CurrencyProvider>
+          <MobileApp onLogout={handleLogout} />
+        </CurrencyProvider>
+      </PermissionProvider>
+    );
   }
 
   return (

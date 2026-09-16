@@ -1,4 +1,27 @@
-const API_URL = 'http://127.0.0.1:8000';
+/* Where the API lives.
+ *
+ * `VITE_API_URL` decides it, and a deployment must set it — Vite substitutes
+ * the value at build time, so a built bundle carries whatever was set when it
+ * was built, not when it is served.
+ *
+ * Left unset, the API is assumed to be on the same host that served the page,
+ * on the port below. That is what makes the app reachable from a phone with
+ * no configuration: opened at `http://192.168.1.5:5173`, it calls
+ * `http://192.168.1.5:8000` rather than a `127.0.0.1` that, on a phone, means
+ * the phone itself. Deriving the protocol as well keeps an HTTPS page from
+ * making a blocked mixed-content call.
+ */
+const DEFAULT_API_PORT = 8000;
+
+const sameHostApi = () => {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:${DEFAULT_API_PORT}`;
+};
+
+// Any trailing slash is dropped so that `${API_URL}/users/login` cannot come
+// out as `//users/login`, which some servers treat as a different path.
+const API_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+    || sameHostApi();
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
