@@ -6,9 +6,11 @@ import crud, models, schemas
 from database import get_db
 
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
+from datetime import datetime, timedelta
 import auth
 import models
+import settings_registry as reg
+from routers import settings
 from deps import get_current_user, get_optional_user, require_admin, ADMIN, USER, ROLES
 
 router = APIRouter(
@@ -23,14 +25,46 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         # fallback to username
         user = db.query(models.User).filter(models.User.username == form_data.username).first()
         
+    policy = settings.section_values(db, reg.SECURITY)
+    now = datetime.utcnow()
+
+    # A locked account is refused before the password is checked, so guessing
+    # during a lockout cannot tell an attacker whether they got it right.
+    if user and user.locked_until and user.locked_until > now:
+        wait = int((user.locked_until - now).total_seconds() // 60) + 1
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again in {wait} minute(s).")
+
     if not user or not crud.verify_password(form_data.password, user.hashed_password):
+        # Counted against the account, and only when the account exists — an
+        # unknown username must not become a way to lock out a real one.
+        if user is not None:
+            allowed = policy["lockout_attempts"]
+            user.failed_logins = (user.failed_logins or 0) + 1
+            if allowed and user.failed_logins >= allowed:
+                user.locked_until = now + timedelta(minutes=policy["lockout_minutes"])
+                user.failed_logins = 0
+                db.commit()
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many failed attempts. Account locked for "
+                           f"{policy['lockout_minutes']} minute(s).")
+            db.commit()
+
         raise HTTPException(
             status_code=401,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    # A good password clears the slate.
+    user.failed_logins = 0
+    user.locked_until = None
+    user.last_login_at = now
+    db.commit()
+
+    access_token_expires = timedelta(hours=policy["session_hours"])
     access_token = auth.create_access_token(
         data={"sub": user.email, "id": user.id}, expires_delta=access_token_expires
     )
@@ -65,15 +99,12 @@ def valid_role_or_400(db: Session, role: str) -> str:
 
 # --- Passwords -------------------------------------------------------------
 
-MIN_PASSWORD_LENGTH = 8
-
-
-def validate_new_password(new_password: str, user: models.User):
-    if len(new_password or "") < MIN_PASSWORD_LENGTH:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Password must be at least {MIN_PASSWORD_LENGTH} characters"
-        )
+def validate_new_password(new_password: str, user: models.User,
+                          db: Session = None):
+    # The rules are configured under Security, so a tightened policy applies to
+    # the next password set rather than only to accounts made afterwards.
+    if db is not None:
+        settings.enforce_password_policy(db, new_password)
     # Re-saving the same password looks like it worked but changes nothing,
     # which is worse than being told.
     if crud.verify_password(new_password, user.hashed_password):
@@ -91,7 +122,7 @@ def change_my_password(payload: schemas.ChangePasswordRequest,
     if not crud.verify_password(payload.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
-    validate_new_password(payload.new_password, current_user)
+    validate_new_password(payload.new_password, current_user, db)
     current_user.hashed_password = crud.get_password_hash(payload.new_password)
     db.commit()
     return {"ok": True, "detail": "Password changed. Sign in again with the new password."}
@@ -119,7 +150,7 @@ def reset_user_password(user_id: int, payload: schemas.ResetPasswordRequest,
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    validate_new_password(payload.new_password, user)
+    validate_new_password(payload.new_password, user, db)
     user.hashed_password = crud.get_password_hash(payload.new_password)
     db.commit()
     return {"ok": True, "detail": f"Password reset for {user.username}"}
@@ -178,6 +209,7 @@ def create_user(user: schemas.UserCreate,
     if crud.get_user_by_email(db, email=user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    settings.enforce_password_policy(db, user.password)
     role = valid_role_or_400(db, user.role)
 
     db_user = crud.create_user(db=db, user=user)

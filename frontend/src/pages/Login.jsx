@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Lock, ArrowRight } from 'lucide-react';
 import { loginUser } from '../api';
+import Logo from '../components/Logo';
 import './Login.css';
 
 export default function Login({ onLogin }) {
@@ -32,6 +33,10 @@ export default function Login({ onLogin }) {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
+          {/* Stacked rather than the sidebar's side-by-side lockup: the card is
+              centred and narrow, and the mark carries more weight above the
+              name than beside it. */}
+          <Logo size={64} className="login-logo" />
           <h2 className="text-gradient" style={{fontSize: '2rem', marginBottom: '1rem'}}>ERP Trading</h2>
           <h1>Welcome Back</h1>
           <p>Enter your credentials to access the system</p>

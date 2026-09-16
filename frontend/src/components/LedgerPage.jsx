@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
+import ExportMenu from './ExportMenu';
 import { chartOfAccountsApi, accountingReports } from '../api';
 import { useCurrency } from '../context/CurrencyContext';
 import './MasterPage.css';
@@ -21,6 +22,7 @@ export default function LedgerPage({ config }) {
   const [report, setReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const reportRef = useRef(null);
 
   const { symbol } = useCurrency();
   const money = v => `${symbol}${Number(v || 0).toFixed(2)}`;
@@ -62,7 +64,7 @@ export default function LedgerPage({ config }) {
   ] : [];
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div style={{ paddingBottom: '2rem' }} ref={reportRef}>
       <div className="products-header">
         <div className="page-title">
           <h1>{title}</h1>
@@ -89,6 +91,8 @@ export default function LedgerPage({ config }) {
             <input type="date" className="config-input" value={dateTo}
                    onChange={e => setDateTo(e.target.value)} />
           </label>
+          <ExportMenu containerRef={reportRef} title={title} subtitle={subtitle}
+                      disabled={isLoading || !report} />
           <button className="btn-primary"
                   style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                   onClick={load} disabled={isLoading || !accountId}>

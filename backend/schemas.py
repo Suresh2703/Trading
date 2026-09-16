@@ -1,5 +1,5 @@
 from pydantic import BaseModel, computed_field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime, date
 
 # --- Category ---
@@ -1003,3 +1003,296 @@ class StockBalance(BaseModel):
     in_qty: float
     out_qty: float
     on_hand: float
+
+
+# --- Point of sale ---------------------------------------------------------
+
+class PosLineCreate(BaseModel):
+    """A cart line. Price is sent from the till so a mid-sale price change
+    cannot silently reprice a scanned item."""
+    product_id: int
+    quantity: float = 1.0
+    unit_price: float = 0.0
+    discount_pct: float = 0.0
+    tax_id: Optional[int] = None
+
+
+class PosSaleCreate(BaseModel):
+    customer_id: Optional[int] = None      # falls back to the walk-in customer
+    warehouse_id: Optional[int] = None     # falls back to the default warehouse
+    payment_method: str = "CASH"
+    amount_tendered: float = 0.0
+    notes: Optional[str] = None
+
+    # Card / UPI: the issuer and the last four digits, which is all that may be
+    # kept and all that reconciliation needs.
+    payment_bank: Optional[str] = None
+    payment_last4: Optional[str] = None
+    payment_reference: Optional[str] = None
+
+    # On account: who owes the money.
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
+
+    lines: List[PosLineCreate] = []
+
+
+class PosSale(BaseModel):
+    id: int
+    receipt_no: str
+    sale_date: date
+    customer_id: int
+    warehouse_id: int
+    delivery_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    journal_entry_id: Optional[int] = None
+    payment_method: str
+    amount_total: float
+    amount_tendered: float
+    change_given: float
+    payment_bank: Optional[str] = None
+    payment_last4: Optional[str] = None
+    payment_reference: Optional[str] = None
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
+    cashier_id: Optional[int] = None
+    status: str
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    customer: Optional[Customer] = None
+    warehouse: Optional[Warehouse] = None
+    # The invoice carries the lines and the tax breakdown, so a receipt can be
+    # reprinted from this one payload without a second call.
+    invoice: Optional[SalesDocument] = None
+
+    # Filled in by the router: the name lives on the user rather than the sale,
+    # and a computed property cannot be written to.
+    cashier_name: Optional[str] = None
+
+    @computed_field
+    @property
+    def line_count(self) -> int:
+        return len(self.invoice.lines) if self.invoice else 0
+
+    class Config:
+        from_attributes = True
+
+
+class PosProduct(BaseModel):
+    """A product as the till needs it: price, tax and what is actually on the
+    shelf, so a cashier is not offered something that cannot be sold."""
+    id: int
+    ticker: Optional[str] = None
+    name: Optional[str] = None
+    current_price: float = 0.0
+    unit_name: Optional[str] = None
+    category_name: Optional[str] = None
+    tax_id: Optional[int] = None
+    tax_rate: float = 0.0
+    on_hand: float = 0.0
+
+
+class PosPaymentMethod(BaseModel):
+    code: str
+    label: str
+    # Which account the money lands in. Null means it stays in receivables.
+    account_id: Optional[int] = None
+    account_name: Optional[str] = None
+    takes_tender: bool = False
+    # What the till must collect before this method can be taken, so the screen
+    # asks for exactly what the server will insist on.
+    needs_instrument: bool = False
+    needs_bill_to: bool = False
+
+
+class PosTerminal(BaseModel):
+    """Everything the till needs to open, in one call."""
+    warehouse: Optional[Warehouse] = None
+    warehouses: List[Warehouse] = []
+    walk_in_customer: Optional[Customer] = None
+    customers: List[Customer] = []
+    payment_methods: List[PosPaymentMethod] = []
+    taxes: List[Tax] = []
+    next_receipt_no: str
+
+
+class PosSummaryRow(BaseModel):
+    payment_method: str
+    sale_count: int
+    total: float
+
+
+class PosSummary(BaseModel):
+    """The day's takings, for cashing up."""
+    date_from: date
+    date_to: date
+    sale_count: int
+    gross_total: float
+    voided_count: int
+    voided_total: float
+    by_method: List[PosSummaryRow] = []
+
+
+# --- System configuration --------------------------------------------------
+
+class SettingField(BaseModel):
+    """One setting, carrying enough for a screen to render and police it."""
+    key: str
+    label: str
+    help: Optional[str] = None
+    type: str                       # "int" | "bool"
+    value: Any
+    default: Any
+    min: Optional[int] = None
+    max: Optional[int] = None
+
+
+class SettingSection(BaseModel):
+    section: str
+    fields: List[SettingField] = []
+
+
+class SettingUpdate(BaseModel):
+    values: Dict[str, Any] = {}
+
+
+class PasswordPolicy(BaseModel):
+    min_length: int
+    require_upper: bool
+    require_digit: bool
+    require_symbol: bool
+
+
+class ApiKeyCreate(BaseModel):
+    name: str
+    role: str = "VIEWER"
+    # None falls back to the configured default lifetime.
+    expires_days: Optional[int] = None
+
+
+class ApiKeyUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ApiKey(BaseModel):
+    id: int
+    name: str
+    key_prefix: str
+    role: str
+    is_active: bool
+    expires_at: Optional[datetime] = None
+    last_used_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    created_by_name: Optional[str] = None
+    # Returned only by the call that creates the key, and never again.
+    plain_key: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class Notification(BaseModel):
+    level: str                      # danger | warning | info
+    category: str
+    title: str
+    detail: str
+    link: Optional[str] = None
+
+
+class NotificationFeed(BaseModel):
+    count: int = 0
+    danger: int = 0
+    warning: int = 0
+    info: int = 0
+    items: List[Notification] = []
+
+
+# --- Notes -----------------------------------------------------------------
+
+class UserNoteBase(BaseModel):
+    title: str = ""
+    content: Optional[str] = None
+    pinned: bool = False
+
+
+class UserNoteCreate(UserNoteBase):
+    pass
+
+
+class UserNoteUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    pinned: Optional[bool] = None
+
+
+class UserNote(UserNoteBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    @computed_field
+    @property
+    def preview(self) -> str:
+        """First line of the body, for a list that has to fit many notes."""
+        body = (self.content or "").strip()
+        if not body:
+            return ""
+        first = body.splitlines()[0]
+        return first[:120] + ("..." if len(first) > 120 else "")
+
+    class Config:
+        from_attributes = True
+
+
+# --- Holidays ---------------------------------------------------------------
+
+class HolidayBase(BaseModel):
+    holiday_date: date
+    name: str
+    holiday_type: str = "PUBLIC"
+    is_recurring: bool = False
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class HolidayCreate(HolidayBase):
+    pass
+
+
+class HolidayUpdate(BaseModel):
+    holiday_date: Optional[date] = None
+    name: Optional[str] = None
+    holiday_type: Optional[str] = None
+    is_recurring: Optional[bool] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class Holiday(HolidayBase):
+    id: int
+    # True when this is a recurring holiday shown in a year other than the one
+    # it was entered against. Set when the projection is made — it cannot be
+    # derived afterwards, because the projection carries the viewed year's date.
+    projected: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class CalendarDay(BaseModel):
+    """One day as the calendar needs it."""
+    day: date
+    holiday: Optional[Holiday] = None
+    # True when the holiday is a recurring one shown in a year other than the
+    # one it was entered against — editing it edits the original.
+    projected: bool = False
+    is_weekend: bool = False
+
+
+class HolidayCalendar(BaseModel):
+    year: int
+    month: Optional[int] = None
+    days: List[CalendarDay] = []
+    holiday_count: int = 0

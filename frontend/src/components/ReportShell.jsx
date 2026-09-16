@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
+import ExportMenu from './ExportMenu';
 import './MasterPage.css';
 import './VoucherPage.css';
 
@@ -10,8 +12,10 @@ import './VoucherPage.css';
 export default function ReportShell({
   title, subtitle, filters, cards = [], isLoading, error, onRefresh, children
 }) {
+  const reportRef = useRef(null);
+
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div style={{ paddingBottom: '2rem' }} ref={reportRef}>
       <div className="products-header">
         <div className="page-title">
           <h1>{title}</h1>
@@ -19,6 +23,8 @@ export default function ReportShell({
         </div>
         <div className="report-controls">
           {filters}
+          <ExportMenu containerRef={reportRef} title={title} subtitle={subtitle}
+                      disabled={isLoading || Boolean(error)} />
           <button className="btn-primary"
                   style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                   onClick={onRefresh} disabled={isLoading}>

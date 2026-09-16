@@ -66,3 +66,86 @@
 .sidebar-toggle:hover {
   color: var(--accent-primary);
 }
+
+/* --- alerts --------------------------------------------------------------- */
+
+.alerts-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge.danger {
+  background: var(--danger);
+}
+
+.topbar-alerts {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 340px;
+  max-width: 88vw;
+  padding: 0.5rem;
+  border-radius: 10px;
+  /* The page panels below create their own stacking contexts, so this has to
+     outrank them explicitly. */
+  z-index: 90;
+}
+
+.alerts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.35rem 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.alerts-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.alert-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.55rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.alert-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.alert-row.danger { border-left-color: var(--danger); }
+.alert-row.warning { border-left-color: #f59e0b; }
+.alert-row.info { border-left-color: var(--text-muted); }
+
+.alert-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.alert-detail {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.alerts-empty,
+.alerts-more {
+  padding: 1rem 0.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.alerts-more {
+  padding: 0.5rem;
+}

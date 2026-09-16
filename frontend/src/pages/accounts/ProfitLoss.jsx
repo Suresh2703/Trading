@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, Calculator, RefreshCw } from 'lucide-react';
 import { accountingReports } from '../../api';
 import { useCurrency } from '../../context/CurrencyContext';
+import ExportMenu from '../../components/ExportMenu';
 import '../../components/MasterPage.css';
 import '../../components/VoucherPage.css';
 
@@ -11,6 +12,8 @@ export default function ProfitLoss() {
   const [dateTo, setDateTo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const reportRef = useRef(null);
 
   const { symbol } = useCurrency();
   const money = v => `${symbol}${Number(v || 0).toFixed(2)}`;
@@ -62,7 +65,7 @@ export default function ProfitLoss() {
   ]);
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div style={{ paddingBottom: '2rem' }} ref={reportRef}>
       <div className="products-header">
         <div className="page-title">
           <h1>Profit &amp; Loss</h1>
@@ -77,6 +80,7 @@ export default function ProfitLoss() {
             <input type="date" className="config-input" value={dateTo}
                    onChange={e => setDateTo(e.target.value)} />
           </label>
+          <ExportMenu containerRef={reportRef} disabled={isLoading} />
           <button className="btn-primary"
                   style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                   onClick={load} disabled={isLoading}>

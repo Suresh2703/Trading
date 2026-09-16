@@ -3,6 +3,8 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import Footer from './components/Footer';
+import Notepad from './components/Notepad';
+import HolidayPopup from './components/HolidayPopup';
 import Overview from './pages/Overview';
 import Configuration from './pages/Configuration';
 import AuthUsers from './pages/AuthUsers';
@@ -18,6 +20,8 @@ import StockIn from './pages/inventory/StockIn';
 import StockOut from './pages/inventory/StockOut';
 import StockTransfer from './pages/inventory/StockTransfer';
 import StockAdjustment from './pages/inventory/StockAdjustment';
+import HolidayCalendar from './pages/utilities/HolidayCalendar';
+import PointOfSale from './pages/sales/PointOfSale';
 import SalesOrder from './pages/sales/SalesOrder';
 import Delivery from './pages/sales/Delivery';
 import SalesInvoice from './pages/sales/SalesInvoice';
@@ -98,6 +102,8 @@ function App() {
   // Until the server has answered, a toggle would race the load and could
   // save a value the user never chose.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [notepadOpen, setNotepadOpen] = useState(false);
+  const [holidayOpen, setHolidayOpen] = useState(false);
   const location = useLocation();
 
   // Pull the authoritative preferences once signed in.
@@ -128,6 +134,38 @@ function App() {
     cachePref('sidebarOpen', next);
     preferencesApi.save({ sidebarOpen: String(next) }).catch(() => {});
   };
+
+  // Alt+N opens the notepad and Alt+L the holiday calendar. Ctrl+N is bound as
+  // well because it was asked for, but Chrome reserves it for a new window and
+  // will not let a page cancel it, so there it opens the notepad and a browser
+  // window both; Alt is the modifier no browser claims.
+  //
+  // Each popup closes itself on Escape, so this only opens them.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.shiftKey || e.metaKey) return;
+      if (!e.altKey && !e.ctrlKey) return;
+
+      const key = (e.key || '').toLowerCase();
+      // With Alt held, some layouts report the composed character rather than
+      // the letter, so the physical key is the reliable one.
+      const code = e.code === 'KeyN' ? 'n' : e.code === 'KeyL' ? 'l' : null;
+      const pressed = ['n', 'l'].includes(key) ? key : code;
+
+      if (pressed === 'n') {
+        e.preventDefault();
+        setHolidayOpen(false);
+        setNotepadOpen(true);
+      } else if (pressed === 'l' && e.altKey) {
+        // Ctrl+L is the browser's address bar; only Alt opens the calendar.
+        e.preventDefault();
+        setNotepadOpen(false);
+        setHolidayOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Picking a menu item on a narrow screen should get the sidebar out of the way.
   useEffect(() => {
@@ -194,12 +232,14 @@ function App() {
               <Route path="/master/customers" element={<RequireModule module="MASTER_DATA"><Customers /></RequireModule>} />
               <Route path="/master/suppliers" element={<RequireModule module="MASTER_DATA"><Suppliers /></RequireModule>} />
               <Route path="/master/tax" element={<RequireModule module="MASTER_DATA"><Tax /></RequireModule>} />
+              <Route path="/master/holidays" element={<RequireModule module="MASTER_DATA"><HolidayCalendar /></RequireModule>} />
               <Route path="/master/warehouses" element={<RequireModule module="MASTER_DATA"><Warehouses /></RequireModule>} />
               <Route path="/inventory/opening" element={<RequireModule module="INVENTORY"><OpeningStock /></RequireModule>} />
               <Route path="/inventory/in" element={<RequireModule module="INVENTORY"><StockIn /></RequireModule>} />
               <Route path="/inventory/out" element={<RequireModule module="INVENTORY"><StockOut /></RequireModule>} />
               <Route path="/inventory/transfer" element={<RequireModule module="INVENTORY"><StockTransfer /></RequireModule>} />
               <Route path="/inventory/adjustment" element={<RequireModule module="INVENTORY"><StockAdjustment /></RequireModule>} />
+              <Route path="/sales/pos" element={<RequireModule module="SALES"><PointOfSale /></RequireModule>} />
               <Route path="/sales/order" element={<RequireModule module="SALES"><SalesOrder /></RequireModule>} />
               <Route path="/sales/delivery" element={<RequireModule module="SALES"><Delivery /></RequireModule>} />
               <Route path="/sales/invoice" element={<RequireModule module="SALES"><SalesInvoice /></RequireModule>} />
@@ -256,6 +296,8 @@ function App() {
           </div>
           <Footer />
         </main>
+        <Notepad open={notepadOpen} onClose={() => setNotepadOpen(false)} />
+        <HolidayPopup open={holidayOpen} onClose={() => setHolidayOpen(false)} />
       </div>
     </CurrencyProvider>
     </PermissionProvider>

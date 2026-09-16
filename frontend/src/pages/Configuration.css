@@ -96,3 +96,273 @@
 .config-input option {
   background: var(--bg-dark);
 }
+
+/* --- system configuration sections --------------------------------------- */
+
+.cfg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cfg-blurb {
+  max-width: 60ch;
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.cfg-loading,
+.cfg-readonly,
+.cfg-preview-empty {
+  padding: 1.25rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cfg-error,
+.cfg-saved {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.cfg-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+}
+
+.cfg-saved {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
+.cfg-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.cfg-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cfg-field:last-child {
+  border-bottom: none;
+}
+
+.cfg-field-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.cfg-field-text label {
+  font-size: 0.86rem;
+  color: var(--text-main);
+}
+
+.cfg-help {
+  max-width: 58ch;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.cfg-number {
+  flex: 0 0 108px;
+  text-align: right;
+}
+
+/* A switch reads as on/off at a glance where a checkbox reads as a form. */
+.cfg-switch {
+  flex: 0 0 auto;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cfg-switch.on {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.cfg-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cfg-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.cfg-switch.on .cfg-knob {
+  transform: translateX(20px);
+}
+
+.cfg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.cfg-actions button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* --- notification preview -------------------------------------------------- */
+
+.cfg-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.cfg-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.cfg-preview-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.cfg-preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cfg-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.cfg-alert.danger { color: var(--danger); }
+.cfg-alert.warning { color: #f59e0b; }
+.cfg-alert.info { color: var(--text-muted); }
+
+.cfg-alert strong {
+  color: var(--text-main);
+  margin-right: 0.25rem;
+}
+
+.cfg-preview-more {
+  padding-top: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* --- api keys -------------------------------------------------------------- */
+
+.cfg-keys {
+  margin-top: 2.25rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.cfg-newkey {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.cfg-issued {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--accent-primary);
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.cfg-issued-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.cfg-issued-key {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bg-dark);
+}
+
+.cfg-issued-key code {
+  flex: 1;
+  word-break: break-all;
+  font-size: 0.78rem;
+  color: var(--text-main);
+}
+
+.cfg-issued-key button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.cfg-issued-use,
+.cfg-issued-done {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cfg-issued-done {
+  margin-top: 0.5rem;
+}
+
+.cfg-prefix {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

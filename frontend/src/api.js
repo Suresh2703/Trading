@@ -303,3 +303,70 @@ export const createUser = (userData) =>
     // Goes through `request` so a role rejection surfaces its real message
     // instead of a generic failure.
     request('/users/', { method: 'POST', body: JSON.stringify(userData) });
+
+// --- Point of sale ---------------------------------------------------------
+export const posApi = {
+    // Everything the till needs to open: warehouse, walk-in customer, payment
+    // methods and the next receipt number, in one call.
+    terminal: () => request('/pos/terminal'),
+    products: (params = '') => request(`/pos/products${params}`),
+    checkout: (payload) => request('/pos/sales', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    sales: (params = '') => request(`/pos/sales${params}`),
+    sale: (id) => request(`/pos/sales/${id}`),
+    summary: (params = '') => request(`/pos/summary${params}`),
+    void: (id) => request(`/pos/sales/${id}/void`, { method: 'POST' })
+};
+
+// --- System configuration --------------------------------------------------
+export const settingsApi = {
+    // Readable by anyone signed in; the server refuses non-admin writes.
+    all: () => request('/settings/'),
+    saveSection: (section, values) => request(`/settings/${section}`, {
+        method: 'PUT', body: JSON.stringify({ values })
+    }),
+    passwordPolicy: () => request('/settings/password-policy')
+};
+
+export const apiKeysApi = {
+    list: () => request('/api-keys/'),
+    // The plain key comes back on this call and never again.
+    create: (payload) => request('/api-keys/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/api-keys/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/api-keys/${id}`, { method: 'DELETE' })
+};
+
+export const notificationsApi = {
+    feed: () => request('/notifications/')
+};
+
+// --- Utilities: personal notes and the holiday calendar ---------------------
+export const notesApi = {
+    // Every call is scoped to the signed-in user by the server.
+    list: () => request('/notes/'),
+    create: (payload) => request('/notes/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/notes/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/notes/${id}`, { method: 'DELETE' })
+};
+
+export const holidaysApi = {
+    list: (params = '') => request(`/holidays/${params}`),
+    calendar: (year, month) => request(
+        `/holidays/calendar?year=${year}${month ? `&month=${month}` : ''}`),
+    create: (payload) => request('/holidays/', {
+        method: 'POST', body: JSON.stringify(payload)
+    }),
+    update: (id, payload) => request(`/holidays/${id}`, {
+        method: 'PUT', body: JSON.stringify(payload)
+    }),
+    remove: (id) => request(`/holidays/${id}`, { method: 'DELETE' })
+};

@@ -1,5 +1,5 @@
 from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, Float,
-                        DateTime, Date, UniqueConstraint)
+                        DateTime, Date, Text, UniqueConstraint)
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -15,6 +15,12 @@ class User(Base):
     # ADMIN may manage other accounts; USER may not.
     role = Column(String(20), nullable=False, default="USER", index=True)
     is_active = Column(Boolean, default=True)
+
+    # Lockout state. Counted on the account rather than by IP, because the
+    # thing being protected is the account and an attacker can change address.
+    failed_logins = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
 
     accounts = relationship("Account", back_populates="owner")
     orders = relationship("Order", back_populates="owner")
@@ -500,3 +506,165 @@ class RolePermission(Base):
     can_edit = Column(Boolean, nullable=False, default=False)
 
     role = relationship("Role", back_populates="permissions")
+
+
+class PosSale(Base):
+    """One counter sale, tying together the documents a checkout produces.
+
+    A POS sale is deliberately not a new kind of sales document. Ringing one up
+    raises the same delivery and invoice a manual counter sale would, so it
+    reaches the sales reports, the GST return and the dashboard without any of
+    them needing to know POS exists — and stock leaves through the one path
+    that already knows how to reverse itself.
+
+    What is left is what only a till knows: how it was paid, what was handed
+    over, who rang it up. That is this table.
+    """
+    __tablename__ = "pos_sales"
+    __table_args__ = (
+        UniqueConstraint("receipt_no", name="uq_pos_sale_receipt_no"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    receipt_no = Column(String(50), nullable=False, index=True)
+    sale_date = Column(Date, nullable=False, default=datetime.date.today, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False, index=True)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False, index=True)
+
+    # The documents this checkout raised. Nullable so a void can clear the
+    # receipt posting without losing the sale record.
+    delivery_id = Column(Integer, ForeignKey("sales_documents.id"), nullable=True)
+    invoice_id = Column(Integer, ForeignKey("sales_documents.id"), nullable=True)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True)
+
+    payment_method = Column(String(20), nullable=False, default="CASH", index=True)
+    amount_total = Column(Float, nullable=False, default=0.0)
+    # Only meaningful for cash: what the customer handed over, and what went back.
+    amount_tendered = Column(Float, nullable=False, default=0.0)
+    change_given = Column(Float, nullable=False, default=0.0)
+
+    # How a card or UPI payment can be traced back to a statement, without ever
+    # holding anything that could be used to charge the card again. Four digits
+    # and an issuer are enough to reconcile; the column is deliberately four
+    # characters wide so a full card number cannot fit in it even by mistake.
+    payment_bank = Column(String(100), nullable=True)
+    payment_last4 = Column(String(4), nullable=True)
+    payment_reference = Column(String(60), nullable=True)
+
+    # Who the sale is billed to, captured when it goes on account. Snapshotted
+    # rather than read back from the customer, so editing an address later
+    # cannot rewrite what an already-printed receipt said.
+    bill_to_name = Column(String(255), nullable=True)
+    bill_to_address = Column(String(500), nullable=True)
+
+    cashier_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    status = Column(String(20), nullable=False, default="COMPLETED", index=True)
+    notes = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    customer = relationship("Customer")
+    warehouse = relationship("Warehouse")
+    cashier = relationship("User")
+    delivery = relationship("SalesDocument", foreign_keys=[delivery_id])
+    invoice = relationship("SalesDocument", foreign_keys=[invoice_id])
+    journal_entry = relationship("JournalEntry")
+
+
+class AppSetting(Base):
+    """One system-wide setting.
+
+    Key/value rather than a wide table so adding a setting needs no migration,
+    and stored as text with the registry in settings_registry.py owning the
+    type and bounds — one place decides what a setting means, rather than the
+    schema and the screen each holding half the answer.
+
+    Distinct from UserPreference: these apply to everyone, and only an
+    administrator may change them.
+    """
+    __tablename__ = "app_settings"
+    __table_args__ = (
+        UniqueConstraint("setting_key", name="uq_app_setting_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    setting_key = Column(String(80), nullable=False, index=True)
+    setting_value = Column(String(1000), nullable=True)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                        onupdate=datetime.datetime.utcnow)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+
+class ApiKey(Base):
+    """A credential letting another system call this API.
+
+    Only a hash of the key is kept, exactly as for a password: a leaked
+    database must not hand over working keys, and the plain key is shown once
+    at creation and never again. The prefix is stored in clear so a key can be
+    recognised in a list without being reversible.
+    """
+    __tablename__ = "api_keys"
+    __table_args__ = (
+        UniqueConstraint("key_prefix", name="uq_api_key_prefix"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    key_prefix = Column(String(16), nullable=False, index=True)
+    key_hash = Column(String(255), nullable=False)
+    # Which role the key acts as, so a key cannot outrank the person who made it.
+    role = Column(String(20), nullable=False, default="VIEWER")
+    is_active = Column(Boolean, nullable=False, default=True)
+    expires_at = Column(DateTime, nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    creator = relationship("User")
+
+
+class UserNote(Base):
+    """A note belonging to one person.
+
+    Kept on the server rather than in the browser so notes follow the user to
+    any machine, and scoped to the account: a note is never visible to anyone
+    else, including an administrator, because there is no endpoint that reads
+    another user's notes.
+    """
+    __tablename__ = "user_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
+                     nullable=False, index=True)
+    title = Column(String(200), nullable=False, default="")
+    # Text rather than a bounded String: a scratchpad that silently truncates
+    # is worse than one that holds whatever was typed.
+    content = Column(Text, nullable=True)
+    pinned = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                        onupdate=datetime.datetime.utcnow)
+
+
+class Holiday(Base):
+    """A non-working day.
+
+    One row per date, so the same day cannot be marked twice. A holiday that
+    falls on the same date every year is stored once and projected into
+    whichever year is being viewed, rather than needing a row per year.
+    """
+    __tablename__ = "holidays"
+    __table_args__ = (
+        UniqueConstraint("holiday_date", name="uq_holiday_date"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    holiday_date = Column(Date, nullable=False, index=True)
+    name = Column(String(150), nullable=False)
+    # PUBLIC (everyone off), OPTIONAL (taken at will), COMPANY (this business).
+    holiday_type = Column(String(20), nullable=False, default="PUBLIC", index=True)
+    # Same month and day every year — New Year, Independence Day.
+    is_recurring = Column(Boolean, nullable=False, default=False)
+    description = Column(String(500), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

@@ -123,3 +123,10 @@
     transform: translateY(0);
   }
 }
+
+/* The card centres its contents, but .app-logo is a flex row that would sit
+   left-aligned inside it, so it is centred explicitly. */
+.login-logo {
+  justify-content: center;
+  margin-bottom: 1rem;
+}

@@ -13,7 +13,7 @@ export default function Footer() {
   return (
     <footer className="app-footer glass-panel">
       <span className="footer-brand">
-        &copy; {now.getFullYear()} ERP Trading
+        &copy; {now.getFullYear()} Glyph Software LLP. All rights reserved.
       </span>
       <span className="footer-meta">
         {now.toLocaleDateString(undefined, {
